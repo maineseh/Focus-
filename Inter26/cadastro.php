@@ -35,11 +35,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 if ($lembrar) {
                     $token = bin2hex(random_bytes(32)); 
+                    $stmt = $p<?php
+session_start();
+require_once 'conexao.php';
+
+if (isset($_SESSION['usuario_id']) || verificarAutoLogin($pdo)) {
+    header("Location: dashboard.php");
+    exit;
+}
+
+$erro = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $nome = trim($_POST['nome']);
+    $email = trim($_POST['email']);
+    $senha = $_POST['senha'];
+    $confirma_senha = $_POST['confirma_senha'];
+    $lembrar = isset($_POST['lembrar']) ? true : false;
+
+    if ($senha !== $confirma_senha) {
+        $erro = "As senhas não coincidem!";
+    } else {
+        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+        $stmt->execute([$email]);
+        
+        if ($stmt->rowCount() > 0) {
+            $erro = "Este e-mail já está cadastrado.";
+        } else {
+            $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)");
+            
+            if ($stmt->execute([$nome, $email, $senha_hash])) {
+                $usuario_id = $pdo->lastInsertId();
+                
+                // ==========================================
+                // O PULO DO GATO: Limpa a poluição de testes anteriores!
+                // Isso garante que não tem nenhum 'username' velho na memória.
+                session_unset(); 
+                // ==========================================
+
+                // Agora sim, criamos a sessão novinha em folha para este usuário
+                $_SESSION['usuario_id'] = $usuario_id;
+                $_SESSION['usuario_nome'] = $nome;
+
+                if ($lembrar) {
+                    $token = bin2hex(random_bytes(32)); 
                     $stmt = $pdo->prepare("UPDATE usuarios SET remember_token = ? WHERE id = ?");
                     $stmt->execute([$token, $usuario_id]);
                     setcookie('lembrar_token', $token, time() + (86400 * 30), "/"); 
                 }
-                // Redireciona para completar o perfil
+                
+                // Prepara a mensagem bonita do Toast!
+                $_SESSION['toast_msg'] = "Conta criada com sucesso! Vamos escolher seu Avatar? 🚀";
+                
+                // Redireciona para completar o perfil (agora vai dar certo!)
                 header("Location: setup_perfil.php");
                 exit;
             } else {
@@ -56,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Cadastro - Focus</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Usando o mesmo CSS base do Login para manter o padrão */
+        /* CSS mantido igualzinho ao seu */
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #1a2639; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;}
         .card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
