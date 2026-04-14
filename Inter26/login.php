@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             header("Location: setup_perfil.php");
         } else {
             $_SESSION['usuario_username'] = $usuario['username'];
+$_SESSION['toast_msg'] = "Que bom ter você de volta, " . explode(' ', $usuario['nome'])[0] . "! 🎉";
             header("Location: dashboard.php");
         }
         exit;
@@ -69,6 +70,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .btn-outline:hover { background: #fef08a; }
         .divider { margin: 20px 0; font-size: 12px; color: #999; position: relative; }
         .erro { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
+
+        /* Efeito animado para o link Esqueceu a Senha */
+.link-esqueceu {
+    color: #1a2639;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative; /* Necessário para a linha animada funcionar */
+}
+
+.link-esqueceu:hover {
+    color: #eab308; /* Fica amarelo no hover */
+}
+
+/* Criando a linhazinha invisível embaixo */
+.link-esqueceu::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #eab308;
+    visibility: hidden;
+    transform: scaleX(0); /* Começa com tamanho zero */
+    transition: all 0.3s ease-in-out;
+}
+
+/* Faz a linha crescer quando passa o mouse */
+.link-esqueceu:hover::after {
+    visibility: visible;
+    transform: scaleX(1); /* Cresce até 100% */
+}
+
     </style>
 </head>
 <body>
@@ -96,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="options">
             <label><input type="checkbox" name="lembrar"> Lembrar de mim</label>
-            <a href="#" style="color:#1a2639; text-decoration:none;">Esqueceu a senha?</a>
+            <a href="esqueceu_senha.php" class="link-esqueceu">Esqueceu a senha?</a>
         </div>
 
         <button type="submit" class="btn"><i class="fa-solid fa-arrow-right-to-bracket"></i> Entrar</button>
