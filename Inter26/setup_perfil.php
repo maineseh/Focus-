@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $pdo->prepare("UPDATE usuarios SET username = ?, foto_perfil = ? WHERE id = ?");
         if ($stmt->execute([$username, $foto, $usuario_id])) {
             $_SESSION['usuario_username'] = $username;
+            $_SESSION['toast_msg'] = "Perfil configurado! Bem-vinda ao Focus, @" . $username . "! 🚀";
             header("Location: dashboard.php");
             exit;
         } else {
@@ -54,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .avatar-label { cursor: pointer; text-align: center; }
         .avatar-label input { display: none; }
         .avatar-img { width: 70px; height: 70px; border-radius: 50%; border: 3px solid transparent; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #999; transition: 0.3s; }
-        .avatar-label input:checked + .avatar-img { border-color: #facc15; color: #facc15; background: #fffbeb; }
+        .avatar-label input:checked + .avatar-img-dinamica { border-color: #facc15; color: #facc15; background: #fffbeb; }
         .btn { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .erro { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; }
     </style>
@@ -72,21 +73,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <input type="text" name="username" placeholder="@seu_usuario" required>
         </div>
 
-        <p><strong>Escolha seu Avatar:</strong></p>
-        <div class="avatars">
-            <label class="avatar-label">
-                <input type="radio" name="foto_perfil" value="gamer.png" required>
-                <div class="avatar-img"><i class="fa-solid fa-gamepad"></i></div>
-            </label>
-            <label class="avatar-label">
-                <input type="radio" name="foto_perfil" value="code.png">
-                <div class="avatar-img"><i class="fa-solid fa-code"></i></div>
-            </label>
-            <label class="avatar-label">
-                <input type="radio" name="foto_perfil" value="book.png">
-                <div class="avatar-img"><i class="fa-solid fa-book-open"></i></div>
-            </label>
-        </div>
+  <p><strong>Escolha seu Avatar:</strong></p>
+<div class="avatars" style="display: flex; justify-content: space-around; margin-bottom: 30px;">
+    <label class="avatar-label" style="cursor: pointer;">
+        <input type="radio" name="foto_perfil" value="img/gamer.png" required style="display:none;">
+        <img src="img/gamer.png" width="70" height="70" style="border-radius: 50%; border: 3px solid transparent; transition: 0.3s; object-fit: cover;" class="avatar-img-dinamica" alt="Gamer">
+    </label>
+    <label class="avatar-label" style="cursor: pointer;">
+        <input type="radio" name="foto_perfil" value="img/robo.png" style="display:none;">
+        <img src="img/robo.png" width="70" height="70" style="border-radius: 50%; border: 3px solid transparent; transition: 0.3s; object-fit: cover;" class="avatar-img-dinamica" alt="Robô">
+    </label>
+    <label class="avatar-label" style="cursor: pointer;">
+        <input type="radio" name="foto_perfil" value="img/estudos.png" style="display:none;">
+        <img src="img/estudos.png" width="70" height="70" style="border-radius: 50%; border: 3px solid transparent; transition: 0.3s; object-fit: cover;" class="avatar-img-dinamica" alt="Estudos">
+    </label>
+</div>
+
+<style>
+    input:checked + .avatar-img-dinamica { border-color: #facc15 !important; transform: scale(1.1); box-shadow: 0 0 10px rgba(250, 204, 21, 0.5); }
+</style>
 
         <button type="submit" class="btn">Finalizar e Entrar <i class="fa-solid fa-check"></i></button>
     </form>
