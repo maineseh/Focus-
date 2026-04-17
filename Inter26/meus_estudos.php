@@ -1,21 +1,25 @@
 <?php
 session_start();
+require_once 'conexao.php';
 
-if (!isset($_SESSION['usuario_id']) && !isset($_SESSION['usuario_username'])) {
+// Verificação de segurança original
+if (!isset($_SESSION['usuario_id'])) {
     header("Location: login.php");
     exit;
 }
 
-if (!isset($_SESSION['usuario_username'])) {
-    header("Location: setup_perfil.php");
-    exit;
-}
+// BUSCA OS DADOS EXATOS DO BANCO
+// Aqui usamos 'username' conforme o seu código de setup de perfil
+$stmt = $pdo->prepare("SELECT foto_perfil, username FROM usuarios WHERE id = ?");
+$stmt->execute([$_SESSION['usuario_id']]);
+$usuario_dados = $stmt->fetch();
 
-// Busca a foto de perfil (se existir no banco, senão usa padrão)
-$foto_perfil = 'img/padrao.png';
-if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
-    $foto_perfil = 'img/perfil_' . $_SESSION['usuario_id'] . '.jpg';
-}
+/**
+ * LÓGICA DE FOTO CORRIGIDA
+ * Como o seu setup_perfil já salva "img/ex1.png" no banco, 
+ * basta imprimir o valor puro que vem de 'foto_perfil'.
+ */
+$foto_perfil = !empty($usuario_dados['foto_perfil']) ? $usuario_dados['foto_perfil'] : 'img/padrao.png'; 
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -51,20 +55,22 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
         .nav-links a:hover, .nav-links a.active { color: #facc15; }
 
         .nav-right { display: flex; align-items: center; gap: 20px; }
-        .profile-trigger { display: flex; align-items: center; gap: 12px; cursor: pointer; color: white; padding: 5px 10px; border-radius: 30px; transition: 0.3s; position: relative;}
-        .profile-trigger:hover { background: rgba(255,255,255,0.1); }
+        
+        /* PERFIL BLOQUEADO: Sem cursor pointer e sem clique */
+        .profile-trigger { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            color: white; 
+            padding: 5px 10px; 
+            border-radius: 30px;
+            cursor: default; 
+        }
         .profile-img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #facc15; background: #fff; object-fit: cover; }
         .profile-trigger span { font-size: 14px; font-weight: 600; }
 
-        .dropdown-menu {
-            position: absolute; top: 60px; right: 0; background: white; 
-            min-width: 200px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-            display: none; flex-direction: column; overflow: hidden; animation: slideDown 0.3s ease;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-menu a { padding: 12px 20px; color: #1e293b; text-decoration: none; font-size: 14px; transition: 0.2s; border-bottom: 1px solid #f1f5f9; }
-        .dropdown-menu a:hover { background: #f8fafc; padding-left: 25px; color: #1a2639; }
-        .dropdown-menu a.logout { color: #dc2626; border-bottom: none; }
+        /* Dropdown removido permanentemente */
+        .dropdown-menu { display: none !important; }
 
         /* CONTEÚDO PRINCIPAL */
         .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
@@ -358,7 +364,7 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
             transition: 0.3s;
         }
         
-        .modal-content input:focus, .modal-content select:focus {
+        .modal-content input:focus {
             outline: none;
             border-color: #facc15;
         }
@@ -451,7 +457,7 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
 <body>
 
     <div id="toastMsg" class="toast">
-        <i class="fa-solid fa-check-circle"></i>
+        <i class="fa-solid fa-check-circle" style="color: #facc15; margin-right: 10px;"></i>
         <span id="toastMessage"></span>
     </div>
 
@@ -464,18 +470,13 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
         <ul class="nav-links">
             <li><a href="dashboard.php"><i class="fa-solid fa-house"></i> Início</a></li>
             <li><a href="meus_estudos.php" class="active"><i class="fa-solid fa-graduation-cap"></i> Meus Estudos</a></li>
-            <li><a href="#"><i class="fa-solid fa-calendar-days"></i> Agenda</a></li>
+            <li><a href="agenda.php"><i class="fa-solid fa-calendar-days"></i> Agenda</a></li>
         </ul>
 
         <div class="nav-right">
-            <div class="profile-trigger" onclick="toggleMenu()">
-                <span>@<?php echo $_SESSION['usuario_username']; ?></span>
+            <div class="profile-trigger">
+                <span>@<?php echo htmlspecialchars($usuario_dados['username'] ?? 'Usuário'); ?></span>
                 <img src="<?php echo $foto_perfil; ?>" alt="Perfil" class="profile-img">
-                <div id="dropdownMenu" class="dropdown-menu">
-                    <a href="#"><i class="fa-solid fa-user-gear"></i> Perfil e Conta</a>
-                    <a href="#"><i class="fa-solid fa-sliders"></i> Preferências</a>
-                    <a href="logout.php" class="logout"><i class="fa-solid fa-power-off"></i> Sair do Sistema</a>
-                </div>
             </div>
         </div>
     </nav>
@@ -489,11 +490,9 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
         </div>
 
         <div class="disciplinas-list" id="disciplinasList">
-            <!-- As disciplinas serão carregadas via JavaScript -->
-        </div>
+            </div>
     </div>
 
-    <!-- MODAL PARA ADICIONAR DISCIPLINA -->
     <div id="modalDisciplina" class="modal">
         <div class="modal-content">
             <h3>Adicionar Disciplina</h3>
@@ -512,11 +511,10 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
         </div>
     </div>
 
-    <!-- MODAL PARA ADICIONAR TAREFA -->
     <div id="modalTarefa" class="modal">
         <div class="modal-content">
             <h3>Adicionar Tarefa</h3>
-            <p style="color: #64748b; margin-bottom: 10px;">Disciplina: <strong id="disciplinaNomeModal"></strong></p>
+            <p>Disciplina: <strong id="disciplinaNomeModal"></strong></p>
             <input type="text" id="tarefaNome" placeholder="Nome da tarefa" required>
             <div class="modal-buttons">
                 <button type="button" class="btn-modal-cancel" onclick="closeModal('modalTarefa')">Cancelar</button>
@@ -526,306 +524,136 @@ if (file_exists('img/perfil_' . $_SESSION['usuario_id'] . '.jpg')) {
     </div>
 
     <script>
-        // Variável global para armazenar o ID da disciplina atual
         let currentDisciplinaId = null;
         let currentRating = 1;
-        
-        // Carregar dados do localStorage
         let disciplinas = JSON.parse(localStorage.getItem('disciplinas')) || [];
-        
-        // Sistema de estrelas para dificuldade
+
         function initStarRating() {
             const stars = document.querySelectorAll('#ratingStars .rating-star');
-            const ratingStars = document.getElementById('ratingStars');
-            
             if (!stars.length) return;
-            
-            function updateStars(value) {
-                stars.forEach(star => {
-                    const starValue = parseInt(star.dataset.value);
-                    if (starValue <= value) {
-                        star.className = 'fa-solid fa-star rating-star active';
-                    } else {
-                        star.className = 'fa-regular fa-star rating-star';
-                    }
-                });
+            function update(val) {
+                stars.forEach(s => s.className = s.dataset.value <= val ? 'fa-solid fa-star rating-star active' : 'fa-regular fa-star rating-star');
             }
-            
-            stars.forEach(star => {
-                star.addEventListener('click', function() {
-                    currentRating = parseInt(this.dataset.value);
-                    updateStars(currentRating);
-                });
-                
-                star.addEventListener('mouseenter', function() {
-                    const value = parseInt(this.dataset.value);
-                    stars.forEach(s => {
-                        const starValue = parseInt(s.dataset.value);
-                        if (starValue <= value) {
-                            s.className = 'fa-solid fa-star rating-star';
-                        } else {
-                            s.className = 'fa-regular fa-star rating-star';
-                        }
-                    });
-                });
+            stars.forEach(s => {
+                s.onclick = () => { currentRating = s.dataset.value; update(currentRating); };
+                s.onmouseenter = () => update(s.dataset.value);
             });
-            
-            if (ratingStars) {
-                ratingStars.addEventListener('mouseleave', function() {
-                    updateStars(currentRating);
-                });
-            }
-            
-            updateStars(currentRating);
+            document.getElementById('ratingStars').onmouseleave = () => update(currentRating);
+            update(currentRating);
         }
-        
-        // Função para mostrar toast
-        function showToast(message) {
-            const toast = document.getElementById('toastMsg');
-            const toastMessage = document.getElementById('toastMessage');
-            toastMessage.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+
+        function showToast(msg) {
+            const t = document.getElementById('toastMsg');
+            document.getElementById('toastMessage').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
-        
-        // Função para salvar disciplinas no localStorage
-        function saveDisciplinas() {
+
+        function save() {
             localStorage.setItem('disciplinas', JSON.stringify(disciplinas));
-            renderDisciplinas();
+            render();
         }
-        
-        // Função para adicionar disciplina
+
         function adicionarDisciplina() {
-            const nome = document.getElementById('disciplinaNome').value.trim();
-            if (!nome) {
-                showToast('Por favor, insira o nome da disciplina!');
-                return;
-            }
-            
-            const novaDisciplina = {
-                id: Date.now(),
-                nome: nome,
-                dificuldade: currentRating,
-                tarefas: [],
-                expanded: false
-            };
-            
-            disciplinas.push(novaDisciplina);
-            saveDisciplinas();
+            const n = document.getElementById('disciplinaNome').value.trim();
+            if(!n) return;
+            disciplinas.push({ id: Date.now(), nome: n, dificuldade: currentRating, tarefas: [], expanded: false });
+            save();
             closeModal('modalDisciplina');
             document.getElementById('disciplinaNome').value = '';
-            currentRating = 1;
-            initStarRating();
-            showToast('Disciplina adicionada com sucesso!');
+            showToast('Disciplina adicionada!');
         }
-        
-        // Função para adicionar tarefa
+
         function adicionarTarefa() {
-            const nome = document.getElementById('tarefaNome').value.trim();
-            if (!nome) {
-                showToast('Por favor, insira o nome da tarefa!');
-                return;
-            }
-            
-            const disciplina = disciplinas.find(d => d.id === currentDisciplinaId);
-            if (disciplina) {
-                const novaTarefa = {
-                    id: Date.now(),
-                    nome: nome,
-                    concluida: false
-                };
-                disciplina.tarefas.push(novaTarefa);
-                saveDisciplinas();
+            const n = document.getElementById('tarefaNome').value.trim();
+            if(!n) return;
+            const d = disciplinas.find(i => i.id === currentDisciplinaId);
+            if(d) {
+                d.tarefas.push({ id: Date.now(), nome: n, concluida: false });
+                save();
                 closeModal('modalTarefa');
-                document.getElementById('tarefaNome').value = '';
-                showToast('Tarefa adicionada com sucesso!');
+                showToast('Tarefa salva!');
             }
         }
-        
-        // Função para toggle da tarefa (marcar/desmarcar como concluída)
-        function toggleTarefa(disciplinaId, tarefaId, checkbox) {
-            const disciplina = disciplinas.find(d => d.id === disciplinaId);
-            if (disciplina) {
-                const tarefa = disciplina.tarefas.find(t => t.id === tarefaId);
-                if (tarefa) {
-                    tarefa.concluida = checkbox.checked;
-                    saveDisciplinas();
-                }
+
+        function toggleTarefa(dId, tId) {
+            const d = disciplinas.find(i => i.id === dId);
+            if(d) {
+                const t = d.tarefas.find(j => j.id === tId);
+                if(t) t.concluida = !t.concluida;
+                save();
             }
         }
-        
-        // Função para deletar tarefa
-        function deleteTarefa(disciplinaId, tarefaId, event) {
-            event.stopPropagation();
-            const disciplina = disciplinas.find(d => d.id === disciplinaId);
-            if (disciplina) {
-                disciplina.tarefas = disciplina.tarefas.filter(t => t.id !== tarefaId);
-                saveDisciplinas();
-                showToast('Tarefa removida!');
+
+        function deleteD(id) {
+            if(confirm('Excluir disciplina?')) {
+                disciplinas = disciplinas.filter(i => i.id !== id);
+                save();
             }
         }
-        
-        // Função para deletar disciplina
-        function deleteDisciplina(disciplinaId, event) {
-            event.stopPropagation();
-            if (confirm('Tem certeza que deseja excluir esta disciplina e todas as suas tarefas?')) {
-                disciplinas = disciplinas.filter(d => d.id !== disciplinaId);
-                saveDisciplinas();
-                showToast('Disciplina removida!');
-            }
+
+        function toggleD(id) {
+            const d = disciplinas.find(i => i.id === id);
+            if(d) d.expanded = !d.expanded;
+            save();
         }
-        
-        // Função para toggle expandir/recolher disciplina
-        function toggleDisciplina(disciplinaId) {
-            const disciplina = disciplinas.find(d => d.id === disciplinaId);
-            if (disciplina) {
-                disciplina.expanded = !disciplina.expanded;
-                saveDisciplinas();
-            }
-        }
-        
-        // Função para calcular progresso da disciplina
-        function calcularProgresso(tarefas) {
-            if (tarefas.length === 0) return 0;
-            const concluidas = tarefas.filter(t => t.concluida).length;
-            return Math.round((concluidas / tarefas.length) * 100);
-        }
-        
-        // Função para renderizar as disciplinas
-        function renderDisciplinas() {
+
+        function render() {
             const container = document.getElementById('disciplinasList');
-            
-            if (disciplinas.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-book-open"></i>
-                        <h3>Nenhuma disciplina cadastrada</h3>
-                        <p>Clique no botão acima para adicionar sua primeira disciplina!</p>
-                    </div>
-                `;
+            if(!disciplinas.length) {
+                container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-book-open"></i><h3>Nenhuma matéria ainda</h3></div>`;
                 return;
             }
-            
-            container.innerHTML = disciplinas.map(disciplina => {
-                const progresso = calcularProgresso(disciplina.tarefas);
-                const expandedClass = disciplina.expanded ? 'expanded' : '';
+            container.innerHTML = disciplinas.map(d => {
+                const perc = d.tarefas.length ? Math.round((d.tarefas.filter(t => t.concluida).length / d.tarefas.length) * 100) : 0;
+                let stars = '';
+                for(let i=1; i<=5; i++) stars += `<i class="fa-solid fa-star star ${i <= d.dificuldade ? 'active' : ''}"></i>`;
                 
                 return `
-                    <div class="disciplina-card ${expandedClass}" data-id="${disciplina.id}">
-                        <div class="disciplina-header" onclick="toggleDisciplina(${disciplina.id})">
-                            <div class="disciplina-info">
-                                <div class="disciplina-nome">${escapeHtml(disciplina.nome)}</div>
-                                <div class="disciplina-dificuldade">
-                                    ${gerarEstrelas(disciplina.dificuldade)}
-                                </div>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: ${progresso}%"></div>
-                                    </div>
-                                    <span class="progress-text">${progresso}%</span>
-                                </div>
-                            </div>
-                            <div class="disciplina-actions">
-                                <button class="btn-add-tarefa" onclick="event.stopPropagation(); openModal('tarefa', ${disciplina.id}, '${escapeHtml(disciplina.nome)}')">
-                                    <i class="fa-solid fa-tasks"></i> Adicionar Tarefa
-                                </button>
-                                <button class="btn-delete" onclick="deleteDisciplina(${disciplina.id}, event)">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                                <i class="fa-solid fa-chevron-down dropdown-icon"></i>
+                <div class="disciplina-card ${d.expanded ? 'expanded' : ''}">
+                    <div class="disciplina-header" onclick="toggleD(${d.id})">
+                        <div class="disciplina-info">
+                            <div class="disciplina-nome">${d.nome}</div>
+                            <div style="margin-bottom:10px">${stars}</div>
+                            <div style="display:flex; align-items:center; gap:10px">
+                                <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
+                                <span class="progress-text">${perc}%</span>
                             </div>
                         </div>
-                        <div class="tarefas-area">
-                            <div class="tarefas-list">
-                                ${renderizarTarefas(disciplina.tarefas, disciplina.id)}
-                            </div>
+                        <div class="disciplina-actions">
+                            <button class="btn-add-tarefa" onclick="event.stopPropagation(); openModal('tarefa', ${d.id}, '${d.nome}')">Add Tarefa</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteD(${d.id})"><i class="fa-solid fa-trash"></i></button>
+                            <i class="fa-solid fa-chevron-down dropdown-icon"></i>
                         </div>
                     </div>
-                `;
+                    <div class="tarefas-area">
+                        <div class="tarefas-list">
+                            ${d.tarefas.map(t => `
+                                <div class="tarefa-item ${t.concluida ? 'concluida' : ''}">
+                                    <input type="checkbox" ${t.concluida ? 'checked' : ''} onchange="toggleTarefa(${d.id}, ${t.id})">
+                                    <span class="tarefa-nome" style="flex:1">${t.nome}</span>
+                                </div>`).join('') || '<p style="text-align:center; color:#94a3b8">Sem tarefas.</p>'}
+                        </div>
+                    </div>
+                </div>`;
             }).join('');
         }
-        
-        // Função para renderizar as tarefas
-        function renderizarTarefas(tarefas, disciplinaId) {
-            if (tarefas.length === 0) {
-                return `
-                    <div style="text-align: center; padding: 20px; color: #94a3b8;">
-                        <i class="fa-solid fa-clipboard-list"></i>
-                        <p>Nenhuma tarefa ainda. Adicione sua primeira tarefa!</p>
-                    </div>
-                `;
-            }
-            
-            return tarefas.map(tarefa => `
-                <div class="tarefa-item ${tarefa.concluida ? 'concluida' : ''}">
-                    <input type="checkbox" class="tarefa-checkbox" 
-                        ${tarefa.concluida ? 'checked' : ''} 
-                        onchange="toggleTarefa(${disciplinaId}, ${tarefa.id}, this)">
-                    <span class="tarefa-nome">${escapeHtml(tarefa.nome)}</span>
-                    <i class="fa-solid fa-trash delete-tarefa" onclick="deleteTarefa(${disciplinaId}, ${tarefa.id}, event)"></i>
-                </div>
-            `).join('');
-        }
-        
-        // Função para gerar estrelas
-        function gerarEstrelas(dificuldade) {
-            let estrelas = '';
-            for (let i = 1; i <= 5; i++) {
-                estrelas += `<i class="fa-solid fa-star star ${i <= dificuldade ? 'active' : ''}"></i>`;
-            }
-            return estrelas;
-        }
-        
-        // Função para escapar HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        // Funções de modal
-        function openModal(type, disciplinaId = null, disciplinaNome = '') {
-            if (type === 'disciplina') {
+
+        function openModal(type, id=null, nome='') {
+            if(type === 'disciplina') {
                 document.getElementById('modalDisciplina').classList.add('show');
-                document.getElementById('disciplinaNome').value = '';
-                currentRating = 1;
                 initStarRating();
-            } else if (type === 'tarefa' && disciplinaId) {
-                currentDisciplinaId = disciplinaId;
-                document.getElementById('disciplinaNomeModal').innerHTML = disciplinaNome;
-                document.getElementById('tarefaNome').value = '';
+            } else {
+                currentDisciplinaId = id;
+                document.getElementById('disciplinaNomeModal').innerText = nome;
                 document.getElementById('modalTarefa').classList.add('show');
             }
         }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('show');
-        }
-        
-        function toggleMenu() {
-            document.getElementById("dropdownMenu").classList.toggle("show");
-        }
-        
-        // Fechar modal ao clicar fora
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('show');
-            }
-            if (!event.target.closest('.profile-trigger')) {
-                var dropdown = document.getElementById("dropdownMenu");
-                if (dropdown && dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
-            }
-        }
-        
-        // Inicializar a página
-        document.addEventListener('DOMContentLoaded', () => {
-            renderDisciplinas();
-            initStarRating();
-        });
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        window.onclick = (e) => { if(e.target.classList.contains('modal')) closeModal(e.target.id); };
+
+        document.addEventListener('DOMContentLoaded', render);
     </script>
 </body>
 </html>
