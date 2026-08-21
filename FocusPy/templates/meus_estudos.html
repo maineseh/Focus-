@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Estudos | Focus OS Gold</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meus_estudos.css') }}">
+
+</head>
+
+<body>
+
+    <div id="toastMsg" class="toast">
+        <i class="fa-solid fa-microchip fa-spin" style="color: var(--accent); font-size: 28px;"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+
+    <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo">
+
+    <span class="brand-text">Focus</span>
+
+</a>
+           <ul class="nav-links">
+    <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+    <li><a href="{{ url_for('meus_estudos') }}" class="active"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+    <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+    <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+</ul>
+            <div class="profile-static">
+                <span>@{{ username_exibir }}</span>
+                <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-section">
+            <h1>Central de Módulos</h1>
+            <button class="btn-add" onclick="openModal('disciplina')">
+                <i class="fa-solid fa-plus-circle"></i> Adicionar Disciplina
+            </button>
+        </div>
+
+        <div class="disciplinas-list" id="disciplinasList"></div>
+
+<!-- ======================================================
+    SESSÃO DE MICRO TAREFAS DINÂMICAS
+====================================================== -->
+
+<div class="microtask-section">
+
+    <div class="header-section" style="margin-top:60px;">
+        <h1>Microtarefas Adaptativas</h1>
+    </div>
+
+    <div class="microtask-card" id="microtaskBox">
+
+        <div class="microtask-header">
+
+            <div class="microtask-icon">
+                <i class="fa-solid fa-brain"></i>
+            </div>
+
+            <div class="microtask-info">
+
+                <h3 id="microtaskTitle">
+                    Sincronizando protocolo...
+                </h3>
+
+                <p id="microtaskDesc">
+                    Aguarde a geração das microtarefas baseadas no seu estado.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="microtask-list" id="microtaskList">
+
+            <!-- tarefas vão aparecer aqui -->
+
+        </div>
+
+    </div>
+
+</div>
+
+        <div class="protocol-card">
+    <div class="protocol-icon">
+        <i class="fa-solid fa-shield-halved"></i>
+    </div>
+
+    <div class="protocol-text">
+        <h4>Meus Estudos</h4>
+        <p>
+             Espaço dedicado à organização de disciplinas, tarefas e microtarefas de estudo.  
+            O sistema estrutura atividades em blocos leves e progressivos, facilitando a execução sem sobrecarga.
+            O objetivo é apoiar o aprendizado contínuo de forma equilibrada, mantendo consistência sem pressão excessiva.
+        </p>
+    </div>
+</div>
+    </div>
+
+    <div id="modalDisciplina" class="modal">
+        <div class="modal-content">
+            <h3>Nova Disciplina</h3>
+            <input type="text" id="disciplinaNome" placeholder="Identificação da Matéria">
+           
+            <div class="difficulty-label">
+    Escolha o nível de dificuldade da disciplina
+</div>
+
+            <div class="difficulty-level" id="ratingStars">
+
+    <div class="diff-bar" data-value="1"></div>
+
+    <div class="diff-bar" data-value="2"></div>
+
+    <div class="diff-bar" data-value="3"></div>
+
+    <div class="diff-bar" data-value="4"></div>
+
+    <div class="diff-bar" data-value="5"></div>
+
+</div>
+           <div class="modal-buttons">
+    
+    <button 
+        class="btn-modal-cancel" 
+        onclick="closeModal('modalDisciplina')"
+    >
+        Cancelar
+    </button>
+
+    <button 
+        class="btn-modal-confirm" 
+        onclick="adicionarDisciplina()"
+    >
+        Criar Disciplina
+    </button>
+
+</div>
+        </div>
+    </div>
+
+    <div id="modalTarefa" class="modal">
+        <div class="modal-content">
+            <h3>Vincular Atividade</h3>
+            <p>Destino: <strong id="disciplinaNomeModal" style="color:var(--accent)"></strong></p>
+            <input type="text" id="tarefaNome" placeholder="Descrição da Tarefa">
+            <div class="modal-buttons">
+
+    <button 
+        class="btn-modal-cancel" 
+        onclick="closeModal('modalTarefa')"
+    >
+        Cancelar
+    </button>
+
+    <button 
+        class="btn-modal-confirm" 
+        onclick="adicionarTarefa()"
+    >
+        Adicionar Tarefa
+    </button>
+
+</div>
+        </div>
+    </div>
+
+    <script>
+
+        function agendarNotificacaoHumor() {
+    // 1. Pega a energia salva. Se não existir, assume 3.
+    const energiaRaw = localStorage.getItem('focus_user_energy');
+    const energia = parseInt(energiaRaw) || 3;
+    
+    // 2. TEMPO DE TESTE (Mude depois para 300000 e 900000)
+    // Se energia for 1 ou 2 (baixa): aparece em 3 segundos
+    // Se energia for 3, 4 ou 5 (alta): aparece em 10 segundos
+    const tempoEspera = (energia <= 2) ? 3000 : 10000; 
+
+    const configs = {
+        1: { m: "Sua bateria está no crítico. Que tal parar 5 minutos e beber água?", t: "ALERTA" },
+        2: { m: "Energia baixa detectada. Vamos focar apenas no que for simples?", t: "DICA" },
+        3: { m: "Ritmo estável. Momento ideal para avançar nos módulos.", t: "INFO" },
+        4: { m: "Energia alta! Seu foco está excelente hoje.", t: "FOCO" },
+        5: { m: "Estado de Flow! Você está rendendo o máximo possível.", t: "FLOW" }
+    };
+
+    const config = configs[energia];
+
+    console.log("Notificação agendada para: " + tempoEspera + "ms | Energia: " + energia);
+
+    setTimeout(() => {
+        const div = document.createElement('div');
+        div.className = 'notificacao-humor';
+        div.innerHTML = `
+            <span class="timer-badge">${config.t} OPERACIONAL</span>
+            <div style="display:flex; gap:18px; align-items:center;">
+                <div style="background:var(--btn-bg); width:50px; height:50px; border-radius:15px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid fa-brain" style="color:var(--accent); font-size:24px;"></i>
+                </div>
+                <p style="font-size:15px; font-weight:700; color:var(--text-main); margin:0; line-height:1.4;">${config.m}</p>
+            </div>
+            <button onclick="fecharNotificacao(this)" style="background:none; border:none; color:var(--text-soft); font-size:11px; font-weight:900; cursor:pointer; text-align:right; margin-top:5px; text-transform:uppercase;">Dispensar Protocolo</button>
+        `;
+        document.body.appendChild(div);
+        
+        // Ativa a animação de deslizar
+        setTimeout(() => div.classList.add('show'), 100);
+    }, tempoEspera);
+}
+
+// Função para fechar
+function fecharNotificacao(btn) {
+    const nav = btn.parentElement;
+    nav.classList.remove('show');
+    setTimeout(() => nav.remove(), 800);
+}
+
+// Chame no DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    agendarNotificacaoHumor();
+});
+
+function renderHumorSuggestion() {
+    const config = regrasHumor[energia];
+    
+    // 3. Atualiza o HTML da notificação (vamos criar esse HTML abaixo)
+    const boxSugestao = document.getElementById('sugestaoHumorBox');
+    if(boxSugestao) {
+        boxSugestao.style.display = 'flex';
+        boxSugestao.style.borderLeft = `8px solid ${config.cor}`;
+        boxSugestao.innerHTML = `
+            <i class="fa-solid ${config.icon}" style="color: ${config.cor}; font-size: 24px;"></i>
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; color: ${config.cor};">Sugestão Operacional de Hoje</p>
+                <p style="margin: 5px 0 0; font-size: 15px; font-weight: 600;">${config.msg}</p>
+            </div>
+            <div style="text-align: right; min-width: 80px;">
+                <span style="display: block; font-size: 11px; font-weight: 800; opacity: 0.6;">TEMPO</span>
+                <span style="font-size: 18px; font-weight: 900; color: ${config.cor};">${config.tempo}</span>
+            </div>
+        `;
+    }
+}
+
+        let currentDisciplinaId = null;
+        let currentRating = 3;
+        let disciplinas;
+
+try {
+    disciplinas = JSON.parse(localStorage.getItem('disciplinas')) || [];
+} catch (e) {
+    disciplinas = [];
+    localStorage.removeItem('disciplinas');
+}
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentTheme = localStorage.getItem('focus_theme') || 'default';
+            if(currentTheme !== 'default') document.body.classList.add(currentTheme + '-theme');
+            
+            // MOTOR DE HUMOR OTIMIZADO (RECEPTOR)
+
+            const energy = localStorage.getItem('focus_user_energy') || 3;
+            const config = {
+                1: { col: "rgba(255,0,0,0.08)", int: "0.15" },
+                2: { col: "rgba(255,100,0,0.04)", int: "0.08" },
+                4: { col: "rgba(250,204,21,0.04)", int: "0.08" },
+                5: { col: "rgba(250,204,21,0.08)", int: "0.15" }
+            };
+            if(config[energy]) {
+                document.documentElement.style.setProperty('--mood-overlay', config[energy].col);
+                document.documentElement.style.setProperty('--mood-intensity', config[energy].int);
+            }
+            render();
+        });
+
+       function initStarRating() {
+
+    const bars =
+        document.querySelectorAll(
+            '#ratingStars .diff-bar'
+        );
+
+    const difficultyNames = {
+
+        1: "Muito Fácil",
+        2: "Fácil",
+        3: "Médio",
+        4: "Difícil",
+        5: "Muito Difícil"
+
+    };
+
+    const text =
+        document.getElementById(
+            'difficultyText'
+        );
+
+    function update(val) {
+
+        bars.forEach(bar => {
+
+            const value =
+                parseInt(bar.dataset.value);
+
+            if(value <= val) {
+
+                bar.classList.add('active');
+
+            } else {
+
+                bar.classList.remove('active');
+
+            }
+
+        });
+
+        if(text) {
+
+            text.textContent =
+                difficultyNames[val];
+
+        }
+
+    }
+
+    bars.forEach(bar => {
+
+        bar.onclick = () => {
+
+            currentRating =
+                parseInt(bar.dataset.value);
+
+            update(currentRating);
+
+        };
+
+        bar.onmouseenter = () => {
+
+            update(
+                parseInt(bar.dataset.value)
+            );
+
+        };
+
+    });
+
+    document
+        .getElementById('ratingStars')
+        .onmouseleave =
+            () => update(currentRating);
+
+    update(currentRating);
+
+}
+
+        function showToast(msg) {
+            const t = document.getElementById('toastMsg');
+            document.getElementById('toastMessage').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+       function save() {
+
+    requestAnimationFrame(() => {
+
+        localStorage.setItem(
+            'disciplinas',
+            JSON.stringify(disciplinas)
+        );
+
+        render();
+
+    });
+
+}
+        function adicionarDisciplina() {
+            const n = document.getElementById('disciplinaNome').value.trim();
+            if(!n) return;
+            disciplinas.push({ id: Date.now(), nome: n, dificuldade: currentRating, tarefas: [], expanded: false });
+            save();
+            closeModal('modalDisciplina');
+            document.getElementById('disciplinaNome').value = '';
+            showToast('Módulo Implementado!');
+        }
+
+        function adicionarTarefa() {
+            const n = document.getElementById('tarefaNome').value.trim();
+            if(!n) return;
+            const d = disciplinas.find(i => i.id === currentDisciplinaId);
+            if(d) {
+                d.tarefas.push({ id: Date.now(), nome: n, concluida: false });
+                save();
+                closeModal('modalTarefa');
+                document.getElementById('tarefaNome').value = '';
+                showToast('Atividade Registrada!');
+            }
+        }
+
+        function toggleTarefa(dId, tId) {
+            const d = disciplinas.find(i => i.id === dId);
+            if(d) {
+                const t = d.tarefas.find(j => j.id === tId);
+                if(t) {
+                    t.concluida = !t.concluida;
+                    save();
+                    if(t.concluida) showToast('Tarefa Finalizada! 🚀');
+                }
+            }
+        }
+
+        function deleteD(id) {
+            if(confirm('Excluir este módulo operacional permanentemente?')) {
+                disciplinas = disciplinas.filter(i => i.id !== id);
+                save();
+                showToast('Módulo Removido.');
+            }
+        }
+
+        function toggleD(id) {
+            const d = disciplinas.find(i => i.id === id);
+            if(d) {
+                d.expanded = !d.expanded;
+                save();
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('disciplinasList');
+            if(!disciplinas.length) {
+                container.innerHTML = `<div style="text-align:center; padding:100px; border:3px dashed var(--border); border-radius:50px; opacity:0.5;"><i class="fa-solid fa-book-bookmark" style="font-size:70px;"></i><h3 style="margin-top:20px; font-weight:900;">AGUARDANDO PROTOCOLO...</h3></div>`;
+                return;
+            }
+            container.innerHTML = disciplinas.map(d => {
+                const completed = d.tarefas.filter(t => t.concluida).length;
+                const perc = d.tarefas.length ? Math.round((completed / d.tarefas.length) * 100) : 0;
+                let dificuldadeHTML = '<div class="difficulty-level">';
+
+for(let i = 1; i <= 5; i++) {
+
+    dificuldadeHTML += `
+        <div class="diff-bar 
+            ${i <= d.dificuldade ? 'active' : ''}">
+        </div>
+    `;
+
+}
+
+dificuldadeHTML += '</div>';
+                
+                return `
+                <div class="disciplina-card ${d.expanded ? 'expanded' : ''}">
+                    <div class="disciplina-header" onclick="toggleD(${d.id})">
+                        <div class="disciplina-info">
+                            <div class="disciplina-nome">${d.nome}</div>
+                            <div style="margin-bottom:15px">${dificuldadeHTML}</div>
+                            <div style="display:flex; align-items:center; gap:20px">
+                                <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
+                                <span class="progress-text">${perc}%</span>
+                            </div>
+                        </div>
+                         <div class="disciplina-actions">
+                            <button class="btn-add-tarefa" onclick="event.stopPropagation(); openModal('tarefa', ${d.id}, '${d.nome}')">
+                                <i class="fa-solid fa-plus"></i> ADD TAREFA
+                            </button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteD(${d.id})"><i class="fa-solid fa-trash-can"></i></button>
+                            <i class="fa-solid fa-chevron-down" style="font-size:24px; margin-left:15px; transition:0.4s; ${d.expanded ? 'transform:rotate(180deg)' : ''}"></i>
+                        </div>
+                    </div>
+                    <div class="tarefas-area">
+                        <div class="tarefas-list">
+                            ${d.tarefas.map(t => `
+                                <div class="tarefa-item ${t.concluida ? 'concluida' : ''}">
+                                    <input type="checkbox" class="tarefa-checkbox" ${t.concluida ? 'checked' : ''} onchange="toggleTarefa(${d.id}, ${t.id})">
+                                    <span class="tarefa-nome">${t.nome}</span>
+                                </div>`).join('') || '<p style="text-align:center; opacity:0.6; font-weight:800;">Nenhuma atividade vinculada.</p>'}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openModal(type, id=null, nome='') {
+            if(type === 'disciplina') {
+                document.getElementById('modalDisciplina').classList.add('show');
+                initStarRating();
+            } else {
+                currentDisciplinaId = id;
+                document.getElementById('disciplinaNomeModal').innerText = nome;
+                document.getElementById('modalTarefa').classList.add('show');
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        window.onclick = (e) => { if(e.target.classList.contains('modal')) closeModal(e.target.id); };
+
+/* MICRO TAREFAS DINÂMICAS */
+
+function gerarMicrotarefas() {
+
+    const energiaRaw =
+        localStorage.getItem('focus_user_energy');
+
+    const energia =
+        parseInt(energiaRaw) || 3;
+
+    const microtarefas = {
+
+        1: [
+            "Respirar de forma lenta por 60 segundos",
+            "Hidratar-se com um copo de água",
+            "Organizar um item do ambiente de estudo"
+        ],
+
+        2: [
+            "Ler um parágrafo do material",
+            "Revisar uma anotação anterior",
+            "Abrir e localizar o conteúdo principal"
+        ],
+
+        3: [
+            "Resolver uma questão objetiva",
+            "Revisar um conceito importante",
+            "Ler duas páginas do conteúdo"
+        ],
+
+        4: [
+            "Resolver duas questões com atenção total",
+            "Elaborar um resumo estruturado",
+            "Revisar o conteúdo por alguns minutos com foco  ativo"
+        ],
+
+        5: [
+            "Resolver questões de maior complexidade",
+            "Executar uma sequência de exercícios",
+            "Realizar uma avaliação prática do conteúdo"
+        ]
+
+    };
+
+    const titles = {
+
+        1: "Modo Recuperação Ativa",
+        2: "Modo Aquecimento Cognitivo",
+        3: "Modo Ritmo Estável",
+        4: "Modo Alta Performance",
+        5: "Modo Flow Cognitivo"
+
+    };
+
+    const descs = {
+
+        1: "Microações leves para restaurar energia mental.",
+        2: "Atividades rápidas para ativar o foco.",
+        3: "Manutenção do ritmo produtivo.",
+        4: "Execução direcionada e eficiente.",
+        5: "Aproveitamento máximo do estado mental."
+
+    };
+
+    const lista =
+        microtarefas[energia];
+
+    document.getElementById(
+        "microtaskTitle"
+    ).textContent =
+        titles[energia];
+
+    document.getElementById(
+        "microtaskDesc"
+    ).textContent =
+        descs[energia];
+
+    const container =
+        document.getElementById(
+            "microtaskList"
+        );
+
+    container.innerHTML = "";
+
+    lista.forEach(tarefa => {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "microtask-item";
+
+        div.textContent =
+            tarefa;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+setTimeout(() => {
+
+    gerarMicrotarefas();
+
+}, 30000);
+
+setInterval(() => {
+
+    gerarMicrotarefas();
+
+}, 300000);
+
+document.addEventListener(
+    "visibilitychange",
+    () => {
+
+        if (!document.hidden) {
+
+            gerarMicrotarefas();
+
+        }
+
+    }
+);
+
+    </script>
+
+</body>
+</html>

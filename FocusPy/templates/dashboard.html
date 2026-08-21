@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Focus OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+</head>
+<body>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+
+<img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+
+<span class="brand-text">Focus</span>
+
+</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <h1>Olá, {{ username_exibir }}</h1>
+            <p>Selecione uma área para gerenciar suas atividades.</p>
+        </header>
+
+        <section class="mood-card">
+            <div class="battery-outer">
+                <div class="battery-cell" data-v="1"></div>
+                <div class="battery-cell" data-v="2"></div>
+                <div class="battery-cell" data-v="3"></div>
+                <div class="battery-cell" data-v="4"></div>
+                <div class="battery-cell" data-v="5"></div>
+            </div>
+            <div class="mood-content">
+                <h2>Estado de Energia</h2>
+                <p>Sua bateria mental ajuda a calibrar sua produtividade para os desafios de hoje.</p>
+                <input type="range" min="1" max="5" value="3" id="moodIn">
+                <span class="mood-status" id="moodStatus">HUMOR: ESTÁVEL / OK 😐</span>
+            </div>
+        </section>
+
+        <div class="nav-grid">
+            <a href="{{ url_for('meus_estudos') }}" class="nav-card" style="animation-delay: 0.1s;">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h3>Meus Estudos</h3>
+                <p>Acesse suas disciplinas, adicione atividades e acompanhe seu progresso.</p>
+            </a>
+            <a href="{{ url_for('meu_desempenho') }}" class="nav-card" style="animation-delay: 0.2s;">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3>Desempenho</h3>
+                <p>Analise estatísticas detalhadas sobre sua evolução e produtividade.</p>
+            </a>
+            <a href="{{ url_for('agenda') }}" class="nav-card" style="animation-delay: 0.3s;">
+                <i class="fa-solid fa-calendar-check"></i>
+                <h3>Agenda</h3>
+                <p>Organize seu tempo, visualize prazos e mantenha tarefas sob controle.</p>
+            </a>
+        </div>
+
+<div class="hud-info-card">
+
+    <div class="hud-info-icon">
+        <i class="fa-solid fa-brain"></i>
+    </div>
+
+    <div class="hud-info-text">
+
+        <h4>Central Operacional Focus</h4>
+
+        <p>
+            O Focus organiza sua rotina em módulos inteligentes.
+            Utilize os estudos para dividir disciplinas, acompanhe o desempenho,
+            gerencie metas e monitore seu progresso diário em um ambiente
+            otimizado para foco e clareza mental.
+        </p>
+
+    </div>
+
+
+<div id="focusReminder" class="focus-reminder">
+    <div class="focus-box">
+        <i class="fa-solid fa-brain"></i>
+        <div>
+            <h4>Você ainda está aí?</h4>
+            <p>Que tal retomar seus estudos por alguns minutos?</p>
+        </div>
+        <button onclick="closeReminder()">Continuar</button>
+    </div>
+</div>
+
+
+</div>
+    </div>
+
+    <script>
+
+        const slider = document.getElementById('moodIn');
+        const cells = document.querySelectorAll('.battery-cell');
+        const status = document.getElementById('moodStatus');
+        const moodMap = {
+            1: { t: "NÍVEL CRÍTICO 😢", c: "low", color: "rgba(255,0,0,0.12)", intensity: "0.2" },
+            2: { t: "ENERGIA BAIXA 🥱", c: "low", color: "rgba(255,100,0,0.06)", intensity: "0.1" },
+            3: { t: "ESTÁVEL / OK 😐", c: "mid", color: "transparent", intensity: "0" },
+            4: { t: "MUITO BEM! 😊", c: "high", color: "rgba(250,204,21,0.06)", intensity: "0.1" },
+            5: { t: "EXCELENTE! 🚀", c: "high", color: "rgba(250,204,21,0.12)", intensity: "0.2" }
+        };
+
+        function updateMood(v, save = true) {
+            const m = moodMap[v];
+            cells.forEach(c => {
+                const lvl = parseInt(c.dataset.v);
+                c.className = 'battery-cell';
+                if(lvl <= v) {
+                    c.classList.add('active', m.c);
+                    if(v == 5) c.classList.add('pulse');
+                }
+            });
+            status.innerText = `HUMOR: ${m.t}`;
+            
+            // Otimização: Muda variáveis CSS em vez de filtros pesados
+            document.documentElement.style.setProperty('--mood-overlay', m.color);
+            document.documentElement.style.setProperty('--mood-intensity', m.intensity);
+
+            if(save) localStorage.setItem('focus_user_energy', v);
+        }
+
+        slider.oninput = (e) => updateMood(e.target.value);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('focus_theme') || 'default';
+            if(savedTheme !== 'default') document.body.classList.add(savedTheme + '-theme');
+            
+            const savedEnergy = localStorage.getItem('focus_user_energy') || 3;
+            slider.value = savedEnergy;
+            updateMood(savedEnergy, false);
+        });
+
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show');
+
+         }
+
+
+let idleTimer;
+
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+
+    idleTimer = setTimeout(() => {
+        mostrarReminder();
+    }, 20000); // 20 segundos
+}
+
+function mostrarReminder() {
+    document.getElementById("focusReminder").classList.add("show");
+}
+
+function closeReminder() {
+    document.getElementById("focusReminder").classList.remove("show");
+    resetIdleTimer();
+}
+
+/* Detecta qualquer interação do usuário */
+["mousemove", "keydown", "click", "scroll", "touchstart"].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer);
+});
+
+/* inicia o sistema */
+document.addEventListener("DOMContentLoaded", resetIdleTimer);
+
+
+    </script>
+
+</body>
+</html>

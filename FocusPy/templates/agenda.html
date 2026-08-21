@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Premium | Focus OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
+</head>
+<div id="toastGold" class="toast-gold">
+        <i class="fa-solid fa-bolt" style="color:var(--accent); margin-right: 15px;"></i>
+        <span id="toastMessage">Protocolo Sincronizado</span>
+    </div>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <div class="logo-wrap">
+                    <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo">
+                    <span class="logo-light"></span>
+                </div>
+                <h2 class="brand-text">Focus</h2>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}" class="active"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-static">
+                <span>@{{ username_exibir }}</span>
+                <img src="{{ url_for('static', filename=foto) }}" class="profile-img">
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="header-agenda">
+            <h1>Carga Semanal</h1>
+            <p>Meta Universal recalibrada para sua saúde mental.</p>
+        </header>
+
+        <div class="week-grid" id="weekGrid"></div>
+
+        <div class="planner-card">
+            <div class="suggestion-header">
+                <div>
+                    <h2>Objetivo do Protocolo</h2>
+                    <p>Metas fixas geradas pelo sistema com base no seu humor.</p>
+                </div>
+                <div id="moodBadge" class="mood-tag">ANALISANDO...</div>
+            </div>
+
+            <div id="metaContainer"></div>
+        </div>
+
+     <div class="hud-goals-card">
+
+    <div class="hud-info-icon">
+        <i class="fa-solid fa-bullseye"></i>
+    </div>
+
+    <div class="hud-info-text">
+
+        <h4>Central de Metas</h4>
+
+        <p>
+            O sistema de metas do Focus adapta automaticamente seus objetivos com base no nível de energia cognitiva detectado no seu perfil.
+        </p>
+
+    </div>
+
+</div>
+
+</div>
+
+    </div>
+
+    <script>
+        
+        const BibliotecaMetas = {
+            1: [ 
+                { t: "Foco de Manutenção", d: "A meta é organizar seus tópicos de estudo e limpar sua mesa de trabalho. Evite novos conteúdos hoje.", e: 1 },
+                { t: "Rastreio de Dúvidas", d: "Liste 5 termos técnicos que você tem dificuldade e apenas pesquise o significado de um deles.", e: 1 },
+                { t: "Input Suave", d: "Assista a um vídeo curto (máx 5min) sobre produtividade suave ou bem-estar.", e: 1 }
+            ],
+            2: [ 
+                { t: "Início de Fluxo", d: "Assista a uma videoaula de 15 minutos e anote os 3 pontos mais importantes do conteúdo.", e: 2 },
+                { t: "Resumo em Flashcard", d: "Crie 5 flashcards sobre o último módulo que você estudou e revise-os uma vez.", e: 2 },
+                { t: "Micro-Prática", d: "Resolva 3 exercícios de nível fácil da sua disciplina principal para manter o engajamento.", e: 2 }
+            ],
+            3: [ 
+                { t: "Ciclo Pomodoro", d: "Realize uma sessão de 45 minutos de estudo focado (Deep Work) sem nenhuma distração.", e: 3 },
+                { t: "Mapa Mental Base", d: "Crie um mapa mental conectando o tema central da sua matéria a pelo menos 5 ramificações.", e: 3 },
+                { t: "Bateria de Fixação", d: "Resolva 10 questões de nível médio e analise detalhadamente o porquê de cada acerto ou erro.", e: 3 }
+            ],
+            4: [ 
+                { t: "Técnica Feynman", d: "Grave um áudio de 5 minutos explicando a matéria atual como se desse aula para um iniciante.", e: 4 },
+                { t: "Simulado de Pressão", d: "Resolva 20 questões cronometrando exatamente 2 minutos para cada uma das perguntas.", e: 4 },
+                { t: "Desafio Prático", d: "Crie um problema prático da vida real que envolva a teoria que você está estudando no momento.", e: 4 }
+            ],
+            5: [ 
+                { t: "Sprint de Produção", d: "Avançar dois módulos inteiros e criar um guia de estudos rápido para quem vai começar.", e: 5 },
+                { t: "Projeto de Domínio", d: "Desenvolva uma aplicação real (código, plano, texto ou cálculo) do conhecimento da semana.", e: 5 },
+                { t: "Maratona Analítica", d: "Resolva 40 questões variadas e identifique qual o seu principal 'ponto cego' no desempenho.", e: 5 }
+            ]
+        };
+
+        let currentMeta = null;
+        let energia = parseInt(localStorage.getItem('focus_user_energy') || 3);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+            gerarMeta();
+            renderWeek();
+        });
+
+        function gerarMeta() {
+            const moodNames = ["Crítica", "Baixa", "Estável", "Alta", "Máxima"];
+            document.getElementById('moodBadge').innerText = `Energia: ${moodNames[energia - 1]}`;
+
+            const opcoes = BibliotecaMetas[energia];
+            const selecionada = opcoes[Math.floor(Math.random() * opcoes.length)];
+
+            currentMeta = {
+                id: Date.now(),
+                titulo: selecionada.t,
+                desc: selecionada.d,
+                esforco: selecionada.e,
+                concluida: false
+            };
+            renderMeta();
+        }
+
+        function renderMeta() {
+            const container = document.getElementById('metaContainer');
+            let color;
+            if(energia === 1) color = 'var(--high)';      
+            else if(energia === 5) color = 'var(--low)'; 
+            else color = 'var(--mid)';                   
+
+            container.innerHTML = `
+                <div class="meta-box ${currentMeta.concluida ? 'done' : ''}" id="metaElement">
+                    <div class="meta-content-inner">
+                        <span class="meta-tag-internal" style="background:${color}">PRONTIDÃO NÍVEL ${currentMeta.esforco}</span>
+                        <span class="meta-title">${currentMeta.titulo}</span>
+                        <p class="meta-desc">${currentMeta.desc}</p>
+                    </div>
+                    <button class="btn-complete-compact" onclick="finalizarMeta()" title="Finalizar Objetivo" style="color:${color}">
+                        <i class="fa-solid ${currentMeta.concluida ? 'fa-circle-check' : 'fa-check'}"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderWeek() {
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = '';
+            const now = new Date();
+            const todayIdx = now.getDay();
+            const daysShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+            daysShort.forEach((day, i) => {
+                const isToday = (i === todayIdx);
+                const d = new Date();
+                d.setDate(now.getDate() - (todayIdx - i));
+                
+                grid.innerHTML += `
+                    <div class="day-box ${isToday ? 'active-day' : ''} ${isToday ? getEffortClass() : ''}">
+                        <span class="day-name">${day}</span>
+                        <span class="day-num">${d.getDate()}</span>
+                        ${isToday ? '<i class="fa-solid fa-location-dot" style="margin-top:10px; color:var(--accent)"></i>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function getEffortClass() {
+            if(energia === 1) return "low-effort";  
+            if(energia === 5) return "high-effort"; 
+            return "mid-effort";
+        }
+
+        function finalizarMeta() {
+            if(!currentMeta.concluida) {
+                currentMeta.concluida = true;
+                renderMeta();
+                showToast("Protocolo de Meta Concluído com Sucesso! 🚀");
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toastGold');
+            document.getElementById('toastMessage').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+    </script>
+</body>
+</html>

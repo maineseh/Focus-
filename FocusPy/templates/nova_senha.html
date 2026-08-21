@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Senha - Focus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nova_senha.css') }}">
+</head>
+<body>
+<div class="card">
+    {% if not token_valido %}
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: #dc2626; margin-bottom:15px;"></i>
+        <h2>Erro no Link</h2>
+        <p class="subtitle">{{ erro }}</p>
+        <a href="{{ url_for('esqueceu_senha') }}"><button class="btn" style="background:#1a2639; color:white;">Solicitar novo link</button></a>
+    
+    {% else %}
+        <h2>Criar Nova Senha</h2>
+        <p class="subtitle">Digite sua nova senha de acesso.</p>
+        
+        {% if erro %}<div class='erro'>{{ erro }}</div>{% endif %}
+
+        <form method="POST" action="{{ url_for('nova_senha', token=token_url) }}">
+            <div class="input-group">
+                <input type="password" name="senha" placeholder="Nova Senha" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="confirma_senha" placeholder="Confirme a Nova Senha" required>
+            </div>
+            <button type="submit" class="btn">Salvar Nova Senha</button>
+        </form>
+    {% endif %}
+</div>
+</body>
+</html>

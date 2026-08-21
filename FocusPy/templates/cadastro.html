@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta | Focus OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cadastro.css') }}">
+</head>
+<body>
+
+<div class="register-card">
+    <header class="header-reg">
+        <img src="{{ url_for('static', filename='img/cat.png') }}" class="logo-icon" alt="Logo Focus">
+        <h2>Criar Conta</h2>
+        <p>Inicie seu protocolo Focus OS</p>
+    </header>
+
+    {% if erro %}
+        <div class="erro">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="input-group">
+            <i class="fa-regular fa-user icon-left"></i>
+            <input type="text" name="nome" placeholder="Nome Completo" value="{{ nome }}" required>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-regular fa-envelope icon-left"></i>
+            <input type="email" name="email" placeholder="E-mail Operacional" value="{{ email }}" required>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" name="senha" id="senha_cad" placeholder="Crie uma senha forte" required>
+            <button type="button" class="eye-btn" onclick="toggleSenha('senha_cad', 'eye-cad')">
+                <i class="fa-regular fa-eye-slash" id="eye-cad"></i>
+            </button>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" name="confirma_senha" id="confirma_cad" placeholder="Confirme sua senha" required>
+            <i class="fa-solid fa-shield-check" style="position: absolute; right: 18px; top: 18px; color: #b0bec5; font-size: 18px; opacity: 0.5;"></i>
+        </div>
+
+        <div class="options">
+            <label style="cursor: pointer;">
+                <input type="checkbox" name="lembrar" checked> Lembrar dispositivo
+            </label>
+        </div>
+
+        <button type="submit" class="btn">Finalizar Cadastro</button>
+    </form>
+
+    <a href="{{ url_for('login') }}" class="btn-outline">
+        <i class="fa-solid fa-arrow-left"></i> Voltar ao Acesso
+    </a>
+</div>
+
+<script>
+
+    function toggleSenha(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace("fa-eye-slash", "fa-eye");
+        } else {
+            input.type = "password";
+            icon.classList.replace("fa-eye", "fa-eye-slash");
+        }
+    }
+    
+</script>
+</body>
+</html>

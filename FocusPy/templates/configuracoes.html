@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Settings | Focus OS Gold</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/configuracoes.css') }}">
+</head>
+
+<body>
+
+    <div id="toast" class="toast-engine">
+        <i class="fa-solid fa-microchip fa-spin" style="color: var(--accent); font-size: 28px;"></i>
+        <span>Sincronizando Core...</span>
+    </div>
+
+    <div class="settings-hub">
+        <header class="hub-header">
+            <h1>Configurações</h1>
+            <p>Gerenciamento de núcleo e interface Focus.</p>
+        </header>
+
+        <div class="config-section">
+            <div class="section-title">Aparência e Design</div>
+            <div class="theme-grid">
+
+    <!-- 🌊 OCEAN -->
+    <div class="theme-card" id="t-default" onclick="setTheme('default')">
+        <div class="color-preview">
+            <div class="cp-orig"></div>
+            <div class="cp-acc"></div>
+        </div>
+        <b>Ocean Sand</b>
+    </div>
+
+    <!-- 🌑 NIGHT GREY -->
+    <div class="theme-card" id="t-dark" onclick="setTheme('dark')">
+        <div class="color-preview">
+            <div class="cp-dark"></div>
+            <div class="cp-dark-light"></div>
+        </div>
+        <b>Night Grey</b>
+    </div>
+
+    <!-- 🟣 LAVANDA -->
+    <div class="theme-card" id="t-purple" onclick="setTheme('purple')">
+        <div class="color-preview">
+            <div class="cp-purp"></div>
+            <div class="cp-purp-light"></div>
+        </div>
+        <b>Lavanda</b>
+    </div>
+
+</div>
+        </div>
+
+       <div class="config-section censored">
+    <div class="section-title">Acessibilidade</div>
+            
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alto Contraste</b>
+                    <span>Maximizar legibilidade para TEA/Baixa visão.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-contrast" onchange="toggleContrast()"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Reduzir Movimento</b>
+                    <span>Desativar animações (Ideal para TDAH/Ansiedade).</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-motion" onchange="toggleMotion()"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Fontes Amigáveis</b>
+                    <span>Utilizar tipografia otimizada para Dislexia.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-font"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Protocolos do HUD</div>
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alertas de Metas</b>
+                    <span>Notificações de humor e prazos.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-notif" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Manutenção</div>
+            <div class="setting-item" onclick="clearCache()" style="cursor:pointer;">
+                <div class="item-info">
+                    <b style="color: #ef4444;">Resetar Protocolos</b>
+                    <span>Limpar preferências e cache local.</span>
+                </div>
+                <i class="fa-solid fa-trash-can" style="color: #ef4444; font-size: 20px;"></i>
+            </div>
+        </div>
+
+        <button class="btn-save-exit" onclick="finalizeConfigs()">Sincronizar e Voltar</button>
+    </div>
+
+    <script>
+
+        function setTheme(theme) {
+            document.body.classList.remove('dark-theme', 'purple-theme');
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+
+            if(theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('t-dark').classList.add('active');
+            } else if(theme === 'purple') {
+                document.body.classList.add('purple-theme');
+                document.getElementById('t-purple').classList.add('active');
+            } else {
+                document.getElementById('t-default').classList.add('active');
+            }
+            localStorage.setItem('focus_theme', theme);
+        }
+
+        function toggleContrast() {
+            const isChecked = document.getElementById('c-contrast').checked;
+            if(isChecked) document.body.classList.add('high-contrast');
+            else document.body.classList.remove('high-contrast');
+        }
+
+        function toggleMotion() {
+            const isChecked = document.getElementById('c-motion').checked;
+            if(isChecked) document.body.classList.add('reduce-motion');
+            else document.body.classList.remove('reduce-motion');
+        }
+
+        function clearCache() {
+            if(confirm("Deseja resetar todos os protocolos visuais?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function finalizeConfigs() {
+            const settings = {
+                notif: document.getElementById('c-notif').checked,
+                motion: document.getElementById('c-motion').checked,
+                contrast: document.getElementById('c-contrast').checked,
+                dyslexia: document.getElementById('c-font').checked
+            };
+
+            localStorage.setItem('focus_global_settings', JSON.stringify(settings));
+            document.getElementById('toast').classList.add('show');
+
+            setTimeout(() => { window.location.href = "{{ url_for('dashboard') }}"; }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Carregar Tema
+            setTheme(localStorage.getItem('focus_theme') || 'default');
+
+            // Carregar Configurações
+            const saved = JSON.parse(localStorage.getItem('focus_global_settings'));
+            if(saved) {
+                document.getElementById('c-notif').checked = saved.notif;
+                document.getElementById('c-motion').checked = saved.motion || false;
+                document.getElementById('c-contrast').checked = saved.contrast || false;
+                document.getElementById('c-font').checked = saved.dyslexia || false;
+                
+                if(saved.motion) document.body.classList.add('reduce-motion');
+                if(saved.contrast) document.body.classList.add('high-contrast');
+            }
+        });
+        
+    </script>
+</body>
+</html>

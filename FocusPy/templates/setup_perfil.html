@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Completar Perfil | Focus OS</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/setup_perfil.css') }}">
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="header">
+        <h1>Completar Perfil</h1>
+        <p>Configuração inicial do seu ambiente Focus</p>
+    </div>
+
+    {% if erro %}
+        <div class="error">{{ erro }}</div>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="section">Nome de utilizador</div>
+        <input class="input" type="text" name="username"
+        value="{{ user['username'] or '' }}" required>
+
+        <div class="section">Escolha seu avatar</div>
+
+        <div class="avatars">
+
+            <label class="avatar">
+                <input type="radio" name="foto_perfil" value="img/ex1.png" required>
+                <img src="{{ url_for('static', filename='img/ex1.png') }}">
+            </label>
+
+            <label class="avatar">
+                <input type="radio" name="foto_perfil" value="img/ex2.png">
+                <img src="{{ url_for('static', filename='img/ex2.png') }}">
+            </label>
+
+            <label class="avatar">
+                <input type="radio" name="foto_perfil" value="img/ex3.png">
+                <img src="{{ url_for('static', filename='img/ex3.png') }}">
+            </label>
+
+        </div>
+
+        <button class="btn" type="submit">
+            Iniciar Experiência Focus
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

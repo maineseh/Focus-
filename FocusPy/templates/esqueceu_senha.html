@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Senha | Focus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/esqueceu_senha.css') }}">
+</head>
+<body>
+
+<div class="recovery-card">
+    {% if link_simulado %}
+        <div class="header-rec">
+            <i class="fa-solid fa-envelope-circle-check" style="color: #81c784;"></i>
+            <h2>Link Gerado</h2>
+            <p>Protocolo de recuperação ativo</p>
+        </div>
+
+        <div class="success-box">
+            <p>Identificamos sua conta. Para garantir a segurança, utilize o acesso temporário abaixo:</p>
+            <a href="{{ link_simulado }}" class="btn-confirm">Redefinir Senha Agora</a>
+        </div>
+        
+        <a href="{{ url_for('login') }}" class="btn-voltar">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Login
+        </a>
+
+    {% else %}
+        <header class="header-rec">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Segurança</h2>
+            <p>Recupere seu acesso ao Focus OS</p>
+        </header>
+
+        {% if erro %}
+            <div class="error-box">
+                <i class="fa-solid fa-circle-info"></i> {{ erro }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="input-group">
+                <input type="email" name="email" placeholder="E-mail de cadastro" required>
+            </div>
+            <button type="submit" class="btn">Autenticar e Enviar</button>
+        </form>
+        
+        <a href="{{ url_for('login') }}" class="btn-voltar">
+            <i class="fa-solid fa-xmark"></i> Cancelar Operação
+        </a>
+    {% endif %}
+</div>
+
+</body>
+</html>

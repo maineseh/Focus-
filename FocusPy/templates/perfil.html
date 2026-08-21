@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Perfil | Focus OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+</head>
+
+<body>
+
+<script>
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if(theme !== 'default') document.body.classList.add(theme + '-theme');
+</script>
+
+<div class="edit-card">
+
+    <div class="header-edit">
+        <h1>Editar Perfil</h1>
+    </div>
+
+    {% if erro %}
+        <div style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="input-group">
+            <label>Nome Completo</label>
+            <input type="text" name="nome" value="{{ user['nome'] }}" required>
+        </div>
+
+        <div class="input-group">
+            <label>Nome de Utilizador (@)</label>
+            <input type="text" name="username" value="{{ user['username'] or '' }}" required>
+        </div>
+
+        <div class="section-title">Identidade Visual</div>
+
+        <div class="avatars-grid">
+            {% for i in [1,2,3] %}
+            <label class="avatar-option">
+                <input type="radio" name="foto_perfil" value="img/ex{{ i }}.png"
+                {{ 'checked' if user['foto_perfil'] == 'img/ex' ~ i ~ '.png' else '' }}>
+                <img src="{{ url_for('static', filename='img/ex' ~ i ~ '.png') }}" class="avatar-img">
+            </label>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn-save">Atualizar Perfil</button>
+
+        <a href="{{ url_for('dashboard') }}" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

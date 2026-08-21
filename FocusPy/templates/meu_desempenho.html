@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desempenho | Focus OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meu_desempenho.css') }}">
+
+</head>
+<body>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <div class="logo-wrap">
+                    <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                    <span class="logo-light"></span>
+                </div>
+                <h2 class="brand-text">Focus</h2>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}" class="active"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-static">
+                <span>@{{ username_limpo }}</span>
+                <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="header-title">
+            <h1>Mapeamento Analítico</h1>
+            <p>Sincronização de performance e dados operacionais.</p>
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <i class="fa-solid fa-clock"></i>
+                <h3>{{ "%.1f"|format(total_horas) }}h</h3>
+                <p>Estudo Total</p>
+            </div>
+            <div class="metric-card">
+                <i class="fa-solid fa-brain"></i>
+                <h3>{{ media_humor }}</h3>
+                <p>Humor</p>
+            </div>
+            <div class="metric-card">
+                <i class="fa-solid fa-bolt"></i>
+                <h3>{{ pct_extra }}%</h3>
+                <p>Sincronia</p>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <div class="chart-wrapper">
+                <canvas id="perfChart"></canvas>
+            </div>
+        </div>
+
+        <div class="insight-ai">
+            <div class="insight-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="insight-text">
+                <div class="ai-message" id="aiMsg"></div>
+            </div>
+        </div>
+    </div>
+
+   
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+            initChart(theme);
+            startAI();
+        });
+
+        function initChart(theme) {
+            const ctx = document.getElementById('perfChart').getContext('2d');
+            const isDark = theme === 'dark' || theme === 'purple';
+            
+            // Cores baseadas no tema para o gráfico
+            const textColor = isDark ? '#94a3b8' : '#455a64';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0';
+            const barColor = theme === 'purple' ? 'rgba(168, 85, 247, 0.7)' : (theme === 'dark' ? '#d4ad60' : '#5b7c99');
+
+            new Chart(ctx, {
+                data: {
+                    labels: {{ dias_semana|tojson }},
+                    datasets: [{
+                        type: 'line', 
+                        label: 'Humor', 
+                        data: {{ humor_status|tojson }},
+                        borderColor: '#facc15', 
+                        backgroundColor: '#facc15',
+                        borderWidth: 4, 
+                        tension: 0.4, 
+                        yAxisID: 'yH',
+                        pointRadius: 4
+                    }, {
+                        type: 'bar', 
+                        label: 'Horas', 
+                        data: {{ horas_estudo|tojson }},
+                        backgroundColor: barColor, 
+                        borderRadius: 8, 
+                        yAxisID: 'yE'
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        yE: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor }, 
+                            ticks: { color: textColor, font: { weight: '600' } } 
+                        },
+                        yH: { display: false, max: 6 },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { weight: '600' } }
+                        }
+                    },
+                    plugins: { 
+                        legend: { 
+                            labels: { 
+                                color: textColor,
+                                font: { size: 14, weight: '700' }
+                            } 
+                        } 
+                    }
+                }
+            });
+        }
+
+       function startAI() {
+
+    const data = {{ {"nivel": nivel, "user": username_limpo, "media": media_humor, "horas": total_horas}|tojson }};
+
+    const target = document.getElementById('aiMsg');
+
+    let msg = "";
+
+    // mensagens dinâmicas por nível
+
+    if (data.nivel === "alto") {
+
+        msg = `Mapeamento neural concluído, ${data.user}. Sistema indica alta performance contínua. Eficiência cognitiva acima do padrão esperado. Sincronização otimizada.`;
+
+    } else if (data.nivel === "médio") {
+
+        msg = `Mapeamento neural concluído, ${data.user}. Performance estável detectada. Há margem real para expansão de produtividade e foco.`;
+
+    } else {
+
+        msg = `Mapeamento neural concluído, ${data.user}. Baixa consistência operacional identificada. Recomenda-se reajuste de rotina e gestão de energia mental.`;
+
+    }
+
+    // efeito de digitação
+
+    let i = 0;
+
+    function type() {
+        if (i < msg.length) {
+            target.innerHTML = msg.substring(0, i + 1) + '<span class="ai-cursor"></span>';
+            i++;
+            setTimeout(type, 28);
+        }
+    }
+
+    setTimeout(type, 900);
+}
+    </script>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const energy = localStorage.getItem('focus_user_energy') || 3;
+            const config = {
+                1: { col: "rgba(255,0,0,0.08)", int: "0.15" },
+                2: { col: "rgba(255,100,0,0.04)", int: "0.08" },
+                4: { col: "rgba(250,204,21,0.04)", int: "0.08" },
+                5: { col: "rgba(250,204,21,0.08)", int: "0.15" }
+            };
+            
+            if(config[energy]) {
+                document.documentElement.style.setProperty('--mood-overlay', config[energy].col);
+                document.documentElement.style.setProperty('--mood-intensity', config[energy].int);
+            }
+        });
+
+    </script>
+
+</body>
+</html>
