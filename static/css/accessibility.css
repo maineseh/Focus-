@@ -1,0 +1,92 @@
+/* ============================================================
+   ACESSIBILIDADE — FUNCIONALIDADES COMPARTILHADAS EM TODO O SITE
+   Aplicadas via classes no <body>, controladas por static/js/accessibility.js
+   ============================================================ */
+
+/* ============================================================
+   OVERLAY DE HUMOR — tingimento sutil da tela conforme o nível de
+   energia/humor registrado no Dashboard (slider de bateria).
+   Centralizado aqui para funcionar em TODO o site.
+   Controlado via --mood-overlay / --mood-intensity por
+   static/js/accessibility.js. Pode ser desativado em
+   Configurações > Acessibilidade ("Overlay de Humor").
+   ============================================================ */
+:root {
+    --mood-overlay: transparent;
+    --mood-intensity: 0;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--mood-overlay);
+    opacity: var(--mood-intensity);
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.8s ease, background 0.8s ease;
+}
+
+/* Alto contraste sempre desativa o overlay de humor, para não comprometer legibilidade */
+body.high-contrast {
+    --mood-overlay: transparent !important;
+    --mood-intensity: 0 !important;
+}
+
+/* Fonte para Dislexia (OpenDyslexic) */
+@font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-400-normal.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-400-normal.woff') format('woff');
+}
+
+@font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-700-normal.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-700-normal.woff') format('woff');
+}
+
+/* Aplica a fonte em TODOS os elementos e campos do site (inputs, botões, labels,
+   selects, textareas, links, spans, etc.), exceto nos ícones (Font Awesome),
+   que dependem da própria fonte de ícones para renderizar corretamente. */
+body.dyslexic-font,
+body.dyslexic-font *:not([class*="fa-"]):not(.fa) {
+    font-family: 'OpenDyslexic', sans-serif !important;
+}
+
+body.dyslexic-font input::placeholder,
+body.dyslexic-font textarea::placeholder {
+    font-family: 'OpenDyslexic', sans-serif !important;
+}
+
+/* Reduzir Movimento — desativa animações e transições */
+body.reduce-motion,
+body.reduce-motion * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+/* ============================================================
+   TRANSIÇÃO SUAVE ENTRE PÁGINAS (View Transitions API nativa do
+   navegador). Cada página tem <meta name="view-transition"
+   content="same-origin"> no <head>, o que já ativa um crossfade
+   padrão ao navegar entre páginas do mesmo site. Aqui só ajustamos
+   a duração e respeitamos "Reduzir Movimento" quando ativado.
+   ============================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.35s;
+    animation-timing-function: ease;
+}
+
+body.reduce-motion::view-transition-old(root),
+body.reduce-motion::view-transition-new(root) {
+    animation: none;
+}

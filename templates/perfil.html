@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta name="view-transition" content="same-origin">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil | Focus OS</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+</head>
+
+<body>
+
+<script>
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if(theme !== 'default') document.body.classList.add(theme + '-theme');
+</script>
+
+<div class="profile-card">
+
+    <button type="button" class="btn-close-profile" onclick="window.location.href='{{ url_for('dashboard') }}'"><i class="fa-solid fa-xmark"></i></button>
+
+    <div class="profile-avatar-wrap">
+        <button type="button" class="profile-avatar-btn" onclick="toggleStatusMenu()">
+            <img src="{{ url_for('static', filename=user['foto_perfil'] or 'img/ex1.png') }}" class="profile-avatar-img">
+            <span class="status-dot status-{{ user['status_disponibilidade'] or 'online' }}" id="avatarStatusDot"></span>
+            <span class="avatar-edit-hint"><i class="fa-solid fa-circle-half-stroke"></i></span>
+        </button>
+
+        <div class="status-menu" id="statusMenu">
+            <form method="POST" action="{{ url_for('perfil_status') }}" onsubmit="return salvarStatus(event)">
+                <button type="submit" name="status" value="online" class="status-option">
+                    <span class="status-dot status-online"></span> Online
+                </button>
+                <button type="submit" name="status" value="ausente" class="status-option">
+                    <span class="status-dot status-ausente"></span> Ausente
+                </button>
+                <button type="submit" name="status" value="ocupado" class="status-option">
+                    <span class="status-dot status-ocupado"></span> Não Perturbar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <h1 class="profile-name">@{{ user['username'] or 'usuário' }}</h1>
+
+    {% if user['pronomes'] %}
+    <p class="profile-subline">{{ user['pronomes'] }}</p>
+    {% endif %}
+
+    {% if user['mostrar_nome_real'] and user['nome'] %}
+    <p class="profile-real-name"><i class="fa-solid fa-id-card"></i> {{ user['nome'] }}</p>
+    {% endif %}
+
+    <button type="button" class="btn-edit-profile" onclick="window.location.href='{{ url_for('perfil_editar') }}'">
+        <i class="fa-solid fa-pen"></i> Editar Perfil
+    </button>
+
+    <div class="profile-section">
+        <span class="profile-section-title">Bio</span>
+        <p class="profile-bio">{{ user['bio'] or 'Este usuário ainda não escreveu uma bio.' }}</p>
+    </div>
+
+    <div class="profile-section">
+        <span class="profile-section-title">Membro desde</span>
+        <p class="profile-since"><i class="fa-solid fa-cat"></i> {{ user['criado_em'] }}</p>
+    </div>
+
+</div>
+
+<script>
+    function toggleStatusMenu() {
+        document.getElementById('statusMenu').classList.toggle('show');
+    }
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('statusMenu');
+        const btn = document.querySelector('.profile-avatar-btn');
+        if (menu.classList.contains('show') && !menu.contains(e.target) && !btn.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
+
+    // Troca o status via requisição em segundo plano, sem recarregar a
+    // página — assim o usuário permanece exatamente onde estava (a página
+    // não "pula" mais pro topo).
+    function salvarStatus(e) {
+        e.preventDefault();
+        const status = e.submitter ? e.submitter.value : 'online';
+        fetch(e.target.action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'status=' + encodeURIComponent(status)
+        }).then(resp => {
+            if (!resp.ok) throw new Error('falha');
+            document.getElementById('avatarStatusDot').className = 'status-dot status-' + status;
+            document.getElementById('statusMenu').classList.remove('show');
+        }).catch(() => {
+            // Se a requisição falhar, garante que o status seja salvo do jeito antigo
+            HTMLFormElement.prototype.submit.call(e.target);
+        });
+        return false;
+    }
+</script>
+
+</body>
+</html>

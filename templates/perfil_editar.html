@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Editar Perfil | Focus OS</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+</head>
+
+<body>
+
+<script>
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if(theme !== 'default') document.body.classList.add(theme + '-theme');
+</script>
+
+<div class="edit-card">
+
+    <div class="header-edit">
+        <a href="{{ url_for('perfil') }}" class="btn-icon-back"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1>Editar Perfil</h1>
+    </div>
+
+    {% if erro %}
+        <div style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+
+        <div class="section-title">Identidade Visual</div>
+
+        <div class="avatars-grid">
+            {% for i in [1,2,3] %}
+            <label class="avatar-option">
+                <input type="radio" name="foto_perfil" value="img/ex{{ i }}.png"
+                {{ 'checked' if user['foto_perfil'] == 'img/ex' ~ i ~ '.png' else '' }}>
+                <img src="{{ url_for('static', filename='img/ex' ~ i ~ '.png') }}" class="avatar-img">
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="section-title">Sobre Você</div>
+
+        <div class="input-group">
+            <label>Nome Exibido (@)</label>
+            <input type="text" name="username" value="{{ user['username'] or '' }}" required>
+        </div>
+
+        <div class="input-group">
+            <label>Pronomes</label>
+            <input type="text" name="pronomes" value="{{ user['pronomes'] or '' }}" maxlength="50" placeholder="ex: ela/dela, ele/dele, elu/delu">
+        </div>
+
+        <div class="input-group">
+            <label>Bio</label>
+            <textarea name="bio" maxlength="280" rows="3" placeholder="Conte um pouco sobre você (aparecerá no seu perfil)...">{{ user['bio'] or '' }}</textarea>
+        </div>
+
+        <div class="section-title">Privacidade</div>
+
+        <div class="input-group input-group-inline">
+            <div>
+                <label>Nome Real</label>
+                <input type="text" name="nome" value="{{ user['nome'] }}" required style="margin-top: 8px;">
+            </div>
+            <label class="switch-inline">
+                <input type="checkbox" name="mostrar_nome_real" {{ 'checked' if user['mostrar_nome_real'] else '' }}>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <p class="hint-text">
+            <i class="fa-solid fa-circle-info"></i> Por padrão, só você vê seu nome real. Ative o interruptor pra mostrá-lo no seu perfil.
+        </p>
+
+        <button type="submit" class="btn-save">Salvar Alterações</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

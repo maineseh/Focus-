@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Core Settings | Focus OS Gold</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/configuracoes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+</head>
+
+<body>
+
+    <div id="toast" class="toast-engine">
+        <i class="fa-solid fa-microchip fa-spin" style="color: var(--accent); font-size: 28px;"></i>
+        <span>Sincronizando Core...</span>
+    </div>
+
+    <div class="settings-hub">
+        <a href="{{ origem }}" class="btn-close-config"><i class="fa-solid fa-xmark"></i></a>
+        <header class="hub-header">
+            <h1>Configurações</h1>
+            <p>Gerenciamento de núcleo e interface Focus.</p>
+        </header>
+
+        {% if erro %}
+        <div style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+        {% endif %}
+
+        {% if sucesso %}
+        <div style="color:#81c784; background:rgba(129,199,132,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-check"></i> {{ sucesso }}
+        </div>
+        {% endif %}
+
+        <div class="config-section">
+            <div class="section-title">Segurança</div>
+
+            <div class="security-block" id="block-email">
+                <div class="security-summary" onclick="toggleSecurity('block-email')">
+                    <div class="security-summary-label"><i class="fa-solid fa-envelope"></i> Trocar E-mail</div>
+                    <i class="fa-solid fa-chevron-down security-chevron"></i>
+                </div>
+                <div class="security-content">
+                    <form method="POST" action="{{ url_for('alterar_email') }}" class="security-form">
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">E-mail atual</label>
+                            <input type="email" value="{{ email }}" disabled style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main); opacity:0.6;">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Novo e-mail</label>
+                            <input type="email" name="novo_email" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Confirme sua senha atual</label>
+                            <input type="password" name="senha_atual" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save-secondary">Salvar Novo E-mail</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="security-block" id="block-senha">
+                <div class="security-summary" onclick="toggleSecurity('block-senha')">
+                    <div class="security-summary-label"><i class="fa-solid fa-lock"></i> Trocar Senha</div>
+                    <i class="fa-solid fa-chevron-down security-chevron"></i>
+                </div>
+                <div class="security-content">
+                    <form method="POST" action="{{ url_for('alterar_senha') }}" class="security-form">
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Senha atual</label>
+                            <input type="password" name="senha_atual" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Nova senha</label>
+                            <input type="password" name="nova_senha" minlength="6" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Confirme a nova senha</label>
+                            <input type="password" name="confirma_senha" minlength="6" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save-secondary">Salvar Nova Senha</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Aparência e Design</div>
+            <div class="theme-grid">
+
+    <!-- 🌊 OCEAN -->
+    <div class="theme-card" id="t-default" onclick="setTheme('default')">
+        <div class="color-preview">
+            <div class="cp-orig"></div>
+            <div class="cp-acc"></div>
+        </div>
+        <b>Ocean Sand</b>
+    </div>
+
+    <!-- 🌑 NIGHT GREY -->
+    <div class="theme-card" id="t-dark" onclick="setTheme('dark')">
+        <div class="color-preview">
+            <div class="cp-dark"></div>
+            <div class="cp-dark-light"></div>
+        </div>
+        <b>Night Grey</b>
+    </div>
+
+    <!-- 🟣 LAVANDA -->
+    <div class="theme-card" id="t-purple" onclick="setTheme('purple')">
+        <div class="color-preview">
+            <div class="cp-purp"></div>
+            <div class="cp-purp-light"></div>
+        </div>
+        <b>Lavanda</b>
+    </div>
+
+</div>
+        </div>
+
+       <div class="config-section">
+    <div class="section-title">Acessibilidade</div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alto Contraste</b>
+                    <span>Maximizar legibilidade para TEA/Baixa visão.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-contrast" onchange="toggleContrast()"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Tamanho da Letra</b>
+                    <span>Escolha o quanto o texto aumenta em todo o Focus.</span>
+                </div>
+                <div class="text-size-group" role="group" aria-label="Tamanho da letra">
+                    <button type="button" class="text-size-btn" id="ts-normal" onclick="setTextSize('normal')">-A</button>
+                    <button type="button" class="text-size-btn" id="ts-medio" onclick="setTextSize('medio')" style="font-size: 18px;">A</button>
+                    <button type="button" class="text-size-btn" id="ts-grande" onclick="setTextSize('grande')" style="font-size: 21px;">A+</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Reduzir Movimento</b>
+                    <span>Desativa animações e transições (ideal para TDAH/Ansiedade).</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-motion" onchange="toggleAcc('reduceMotion', 'c-motion')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Fonte para Dislexia</b>
+                    <span>Usa uma tipografia (OpenDyslexic) desenhada para facilitar a leitura.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-dyslexic" onchange="toggleAcc('dyslexicFont', 'c-dyslexic')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Overlay de Humor</b>
+                    <span>Deixa a tela levemente avermelhada ou amarelada conforme o humor/energia registrado no Dashboard.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-mood" checked onchange="toggleAcc('moodOverlay', 'c-mood')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item" style="opacity: 0.55; cursor: default;">
+                <div class="item-info">
+                    <b>Mais opções em breve</b>
+                    <span>Novas configurações de acessibilidade estão a caminho.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Protocolos do HUD</div>
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alertas de Metas</b>
+                    <span>Notificações de humor e prazos.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-notif" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Manutenção</div>
+            <div class="setting-item" onclick="clearCache()" style="cursor:pointer;">
+                <div class="item-info">
+                    <b style="color: #ef4444;">Resetar Protocolos</b>
+                    <span>Limpar preferências e cache local.</span>
+                </div>
+                <i class="fa-solid fa-trash-can" style="color: #ef4444; font-size: 20px;"></i>
+            </div>
+        </div>
+
+        <button class="btn-save-exit" onclick="finalizeConfigs()">Sincronizar e Voltar</button>
+    </div>
+
+    <script>
+
+        function toggleSecurity(id) {
+            const bloco = document.getElementById(id);
+            document.querySelectorAll('.security-block').forEach(b => {
+                if (b !== bloco) b.classList.remove('open');
+            });
+            bloco.classList.toggle('open');
+        }
+
+        function setTheme(theme) {
+            document.body.classList.remove('dark-theme', 'purple-theme');
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+
+            if(theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('t-dark').classList.add('active');
+            } else if(theme === 'purple') {
+                document.body.classList.add('purple-theme');
+                document.getElementById('t-purple').classList.add('active');
+            } else {
+                document.getElementById('t-default').classList.add('active');
+            }
+            localStorage.setItem('focus_theme', theme);
+        }
+
+        function salvarAcessibilidade(overrides) {
+            const atual = JSON.parse(localStorage.getItem('focus_accessibility') || '{}');
+            const config = Object.assign({
+                contrast: false, textSize: 'normal', reduceMotion: false,
+                dyslexicFont: false, moodOverlay: true
+            }, atual, overrides || {});
+            localStorage.setItem('focus_accessibility', JSON.stringify(config));
+            return config;
+        }
+
+        function aplicarEstadoVisual(config) {
+            if (window.FocusAccessibility) {
+                window.FocusAccessibility.applyMoodOverlay(config);
+            }
+            document.body.classList.toggle('high-contrast', !!config.contrast);
+            document.body.classList.toggle('reduce-motion', !!config.reduceMotion);
+            document.body.classList.toggle('dyslexic-font', !!config.dyslexicFont);
+
+            document.body.classList.remove('text-medio', 'text-grande');
+            if (config.textSize === 'medio') document.body.classList.add('text-medio');
+            if (config.textSize === 'grande') document.body.classList.add('text-grande');
+
+            document.querySelectorAll('#ts-normal,#ts-medio,#ts-grande').forEach(b => b.classList.remove('active'));
+            document.getElementById('ts-' + (config.textSize || 'normal')).classList.add('active');
+        }
+
+        function toggleContrast() {
+            const isChecked = document.getElementById('c-contrast').checked;
+            const config = salvarAcessibilidade({ contrast: isChecked });
+            aplicarEstadoVisual(config);
+        }
+
+        function toggleAcc(campo, inputId) {
+            const isChecked = document.getElementById(inputId).checked;
+            const config = salvarAcessibilidade({ [campo]: isChecked });
+            aplicarEstadoVisual(config);
+        }
+
+        function setTextSize(tamanho) {
+            const config = salvarAcessibilidade({ textSize: tamanho });
+            aplicarEstadoVisual(config);
+        }
+
+        function clearCache() {
+            if(confirm("Deseja resetar todos os protocolos visuais?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function finalizeConfigs() {
+            const settings = {
+                notif: document.getElementById('c-notif').checked
+            };
+
+            localStorage.setItem('focus_global_settings', JSON.stringify(settings));
+            document.getElementById('toast').classList.add('show');
+
+            setTimeout(() => { window.location.href = "{{ origem }}"; }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Carregar Tema
+            setTheme(localStorage.getItem('focus_theme') || 'default');
+
+            // Carregar Configurações gerais (notificações)
+            const saved = JSON.parse(localStorage.getItem('focus_global_settings'));
+            if(saved) {
+                document.getElementById('c-notif').checked = saved.notif;
+            }
+
+            // Carregar Acessibilidade (já aplicada globalmente por accessibility.js,
+            // aqui só sincronizamos os controles desta tela)
+            const acc = Object.assign({
+                contrast: false, textSize: 'normal', reduceMotion: false,
+                dyslexicFont: false, moodOverlay: true
+            }, JSON.parse(localStorage.getItem('focus_accessibility') || '{}'));
+            document.getElementById('c-contrast').checked = !!acc.contrast;
+            document.getElementById('c-motion').checked = !!acc.reduceMotion;
+            document.getElementById('c-dyslexic').checked = !!acc.dyslexicFont;
+            document.getElementById('c-mood').checked = acc.moodOverlay !== false;
+            aplicarEstadoVisual(acc);
+        });
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Meus Estudos - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meus_estudos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+</head>
+<body>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}" class="active"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <img src="{{ url_for('static', filename=foto_perfil) }}" class="header-avatar">
+            <div>
+                <h1>Meus Estudos</h1>
+                <p>Organize seus módulos e disciplinas de estudo.</p>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <span class="section-eyebrow"><i class="fa-solid fa-layer-group"></i> Seus módulos ({{ modulos|length }}/{{ limite_modulos }})</span>
+            {% if pode_adicionar %}
+            <button class="btn-primary" onclick="abrirModalModulo()"><i class="fa-solid fa-plus"></i> Novo Módulo</button>
+            {% else %}
+            <span class="limite-info"><i class="fa-solid fa-circle-info"></i> Limite de {{ limite_modulos }} módulos atingido</span>
+            {% endif %}
+        </div>
+
+        {% if modulos %}
+        <div class="disciplina-grid">
+            {% for m in modulos %}
+            <a href="{{ url_for('ver_modulo', modulo_id=m['id']) }}" class="disciplina-card">
+                <div class="disciplina-top">
+                    <div class="modulo-icone"><i class="fa-solid fa-folder-open"></i></div>
+                </div>
+                <span class="disciplina-nome">{{ m['nome'] }}</span>
+                <span style="color: var(--text-soft); font-weight: 700; font-size: 13px;">
+                    {{ m['total_disciplinas'] }} disciplina{{ 's' if m['total_disciplinas'] != 1 else '' }}
+                </span>
+                <div class="disciplina-actions">
+                    <span class="btn-mini primary">Abrir Módulo</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fa-solid fa-folder-open"></i>
+            <p>Você ainda não tem módulos. Crie o primeiro pra começar a organizar seus estudos!</p>
+        </div>
+        {% endif %}
+
+        <div class="page-actions" style="margin: 30px 0 14px;">
+            <span class="section-eyebrow" style="margin: 0;"><i class="fa-solid fa-heart-pulse"></i> Microtarefas de hoje</span>
+            <button class="btn-mini" style="max-width: 220px;" onclick="atualizarMicrotarefas()" id="btnAtualizarMicro">
+                <i class="fa-solid fa-rotate"></i> Atualizar sugestões
+            </button>
+        </div>
+        <div class="micro-checklist-card">
+            <div id="listaMicrotarefas"></div>
+        </div>
+
+        <div class="ai-banner">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <div class="ai-text">
+                <b>Sugestões de estudo com IA</b>
+                <span>Em breve a Focus vai te ajudar a organizar disciplinas automaticamente.</span>
+            </div>
+            <span class="ai-badge">Em breve</span>
+        </div>
+
+        <div class="guia-compacto show" id="guia-meus-estudos">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Como funciona:</b> crie Módulos pra organizar objetivos grandes, e dentro deles adicione Disciplinas com checklist, cronômetro e anotações.</span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalModulo">
+        <div class="modal-box">
+            <h3>Novo Módulo</h3>
+            <form method="POST" action="{{ url_for('criar_modulo') }}">
+                <label>Nome do módulo</label>
+                <input type="text" name="nome" class="input-field" placeholder="ex: Vestibular 2027, Concurso X..." required maxlength="100">
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="fecharModalModulo()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        function abrirModalModulo() { document.getElementById('modalModulo').classList.add('show'); }
+        function fecharModalModulo() { document.getElementById('modalModulo').classList.remove('show'); }
+
+        const MICROTAREFAS = {
+            baixa: [
+                { icone: 'fa-glass-water', titulo: 'Hora de se hidratar', texto: 'Beba um copo de água antes de continuar estudando.' },
+                { icone: 'fa-mug-hot', titulo: 'Faça uma pausa', texto: 'Descanse por 5 minutos antes de voltar aos estudos.' },
+                { icone: 'fa-person-walking', titulo: 'Alongue-se', texto: 'Levante e alongue-se por 2 minutos pra relaxar o corpo.' },
+                { icone: 'fa-wind', titulo: 'Respire fundo', texto: 'Faça 5 respirações profundas pra acalmar a mente.' },
+                { icone: 'fa-bed', titulo: 'Descanse os olhos', texto: 'Feche os olhos por 1 minuto ou olhe pra longe da tela.' },
+                { icone: 'fa-lightbulb', titulo: 'Ajuste o ambiente', texto: 'Verifique se a luz do local está confortável pros seus olhos.' },
+                { icone: 'fa-shoe-prints', titulo: 'Dê uma volta curta', texto: 'Caminhe por 2 minutos pra ativar a circulação.' },
+                { icone: 'fa-face-smile', titulo: 'Seja gentil com você', texto: 'Está tudo bem render menos hoje. Vá no seu ritmo.' },
+                { icone: 'fa-apple-whole', titulo: 'Faça um lanche leve', texto: 'Uma fruta ou lanche rápido pode ajudar a recarregar a energia.' },
+                { icone: 'fa-music', titulo: 'Ouça uma música', texto: 'Uma pausa com música pode ajudar a relaxar antes de continuar.' },
+            ],
+            media: [
+                { icone: 'fa-rotate', titulo: 'Revisão rápida', texto: 'Revise por 5 minutos o que você já estudou hoje.' },
+                { icone: 'fa-list-check', titulo: 'Organize sua sessão', texto: 'Escolha qual disciplina você vai estudar agora.' },
+                { icone: 'fa-glass-water', titulo: 'Beba água', texto: 'Mantenha-se hidratado durante os estudos.' },
+                { icone: 'fa-clock', titulo: 'Defina um tempo', texto: 'Escolha quanto tempo vai dedicar a essa sessão de estudo.' },
+                { icone: 'fa-bullseye', titulo: 'Defina uma meta pequena', texto: 'Escolha uma tarefa simples do checklist pra concluir agora.' },
+                { icone: 'fa-mobile-screen', titulo: 'Reduza distrações', texto: 'Deixe o celular no silencioso enquanto estuda.' },
+                { icone: 'fa-pen', titulo: 'Anote uma dúvida', texto: 'Se surgir uma dúvida, anote pra perguntar depois e continue.' },
+            ],
+            alta: [
+                { icone: 'fa-bolt', titulo: 'Aproveite o pique!', texto: 'Esse é um bom momento pra encarar a disciplina mais difícil.' },
+                { icone: 'fa-stopwatch', titulo: 'Ciclo completo', texto: 'Faça um ciclo Pomodoro inteiro agora que sua energia está alta.' },
+                { icone: 'fa-fire', titulo: 'Desafie-se', texto: 'Aproveite pra avançar em algo que você andava adiando.' },
+                { icone: 'fa-layer-group', titulo: 'Avance vários passos', texto: 'Tente concluir mais de uma tarefa do checklist em sequência.' },
+                { icone: 'fa-brain', titulo: 'Estude algo novo', texto: 'Energia alta é ótima hora pra começar um assunto novo.' },
+                { icone: 'fa-trophy', titulo: 'Bata sua meta do dia', texto: 'Você está indo bem — que tal terminar tudo que planejou hoje?' },
+            ],
+        };
+
+        function escolherMicrotarefasFixas(aleatorio) {
+            const energia = parseInt(localStorage.getItem('focus_user_energy') || '3');
+            let grupo = MICROTAREFAS.media;
+            if (energia <= 2) grupo = MICROTAREFAS.baixa;
+            if (energia >= 4) grupo = MICROTAREFAS.alta;
+
+            if (aleatorio) {
+                return [...grupo].sort(() => Math.random() - 0.5).slice(0, 4);
+            }
+
+            const hoje = new Date().toISOString().slice(0, 10);
+            let seed = 0;
+            for (let i = 0; i < hoje.length; i++) seed += hoje.charCodeAt(i);
+
+            const embaralhado = [...grupo].sort((a, b) => {
+                return (seed * grupo.indexOf(a) % 7) - (seed * grupo.indexOf(b) % 7);
+            });
+            return embaralhado.slice(0, 4);
+        }
+
+        function renderizarMicrotarefas(itens, usandoIA) {
+            const hoje = new Date().toISOString().slice(0, 10);
+            const chaveEstado = 'focus_micro_feitas_' + hoje;
+            const feitas = JSON.parse(localStorage.getItem(chaveEstado) || '[]');
+
+            const lista = document.getElementById('listaMicrotarefas');
+            lista.innerHTML = '';
+
+            if (usandoIA) {
+                const selo = document.createElement('div');
+                selo.className = 'micro-ia-selo';
+                selo.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Sugerido pela IA com base nos seus estudos';
+                lista.appendChild(selo);
+            }
+
+            itens.forEach((item, i) => {
+                const marcado = feitas.includes(i);
+                const div = document.createElement('div');
+                div.className = 'micro-item' + (marcado ? ' done' : '');
+                div.innerHTML = `
+                    <div class="micro-check ${marcado ? 'done' : ''}" onclick="toggleMicro(${i})">
+                        <i class="fa-solid fa-check" style="${marcado ? '' : 'display:none;'}"></i>
+                    </div>
+                    <i class="fa-solid ${item.icone} micro-item-icone"></i>
+                    <div class="micro-item-texto">
+                        <b>${item.titulo}</b>
+                        <span>${item.texto}</span>
+                    </div>
+                `;
+                lista.appendChild(div);
+            });
+        }
+
+        async function carregarMicrotarefa() {
+            const hoje = new Date().toISOString().slice(0, 10);
+            const chaveCache = 'focus_micro_itens_' + hoje;
+            const cache = localStorage.getItem(chaveCache);
+
+            atualizarBotaoLimite();
+
+            if (cache) {
+                const dados = JSON.parse(cache);
+                renderizarMicrotarefas(dados.itens, dados.usandoIA);
+                return;
+            }
+
+            await buscarNovasMicrotarefas(false);
+        }
+
+        async function buscarNovasMicrotarefas(contaComoAtualizacao) {
+            const hoje = new Date().toISOString().slice(0, 10);
+            const chaveCache = 'focus_micro_itens_' + hoje;
+            const energia = parseInt(localStorage.getItem('focus_user_energy') || '3');
+
+            try {
+                const resp = await fetch(`/api/microtarefas?energia=${energia}`);
+                const dados = await resp.json();
+                if (dados.ok && dados.usando_ia && dados.microtarefas?.length) {
+                    localStorage.setItem(chaveCache, JSON.stringify({ itens: dados.microtarefas, usandoIA: true }));
+                    renderizarMicrotarefas(dados.microtarefas, true);
+                    if (contaComoAtualizacao) registrarAtualizacao();
+                    return;
+                }
+            } catch (e) {}
+
+            // Sem IA configurada (ou falhou) — usa as sugestões fixas de sempre
+            const fixas = escolherMicrotarefasFixas(contaComoAtualizacao);
+            localStorage.setItem(chaveCache, JSON.stringify({ itens: fixas, usandoIA: false }));
+            renderizarMicrotarefas(fixas, false);
+            if (contaComoAtualizacao) registrarAtualizacao();
+        }
+
+        const LIMITE_ATUALIZACOES_DIA = 5;
+
+        function chaveAtualizacoes() {
+            const hoje = new Date().toISOString().slice(0, 10);
+            return 'focus_micro_atualizacoes_' + hoje;
+        }
+
+        function contarAtualizacoesHoje() {
+            return parseInt(localStorage.getItem(chaveAtualizacoes()) || '0');
+        }
+
+        function registrarAtualizacao() {
+            const usadas = contarAtualizacoesHoje() + 1;
+            localStorage.setItem(chaveAtualizacoes(), String(usadas));
+            atualizarBotaoLimite();
+        }
+
+        function atualizarBotaoLimite() {
+            const btn = document.getElementById('btnAtualizarMicro');
+            if (!btn) return;
+            const usadas = contarAtualizacoesHoje();
+            const restantes = LIMITE_ATUALIZACOES_DIA - usadas;
+            if (restantes <= 0) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-clock"></i> Limite diário atingido';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-rotate"></i> Atualizar sugestões (${restantes} hoje)`;
+            }
+        }
+
+        async function atualizarMicrotarefas() {
+            if (contarAtualizacoesHoje() >= LIMITE_ATUALIZACOES_DIA) return;
+            const btn = document.getElementById('btnAtualizarMicro');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
+            await buscarNovasMicrotarefas(true);
+        }
+
+        function toggleMicro(indice) {
+            const hoje = new Date().toISOString().slice(0, 10);
+            const chaveEstado = 'focus_micro_feitas_' + hoje;
+            let feitas = JSON.parse(localStorage.getItem(chaveEstado) || '[]');
+            if (feitas.includes(indice)) {
+                feitas = feitas.filter(i => i !== indice);
+            } else {
+                feitas.push(indice);
+            }
+            localStorage.setItem(chaveEstado, JSON.stringify(feitas));
+            carregarMicrotarefa();
+        }
+
+        function fecharGuia(id) {
+            document.getElementById(id).classList.remove('show');
+            localStorage.setItem('focus_guia_fechado_' + id, '1');
+        }
+
+        function verificarGuias() {
+            document.querySelectorAll('.guia-compacto').forEach(g => {
+                if (!localStorage.getItem('focus_guia_fechado_' + g.id)) {
+                    g.classList.add('show');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+            carregarMicrotarefa();
+            verificarGuias();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>{{ disciplina['nome'] }} - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meus_estudos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+</head>
+<body>
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}" class="active"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <a href="{{ url_for('ver_modulo', modulo_id=disciplina['id_modulo']) }}" class="btn-icon-back" style="position: static; font-size: 22px;"><i class="fa-solid fa-arrow-left"></i></a>
+            <div>
+                <h1>{{ disciplina['nome'] }}</h1>
+                <p>{{ disciplina['minutos_estudados'] or 0 }} minutos estudados no total.</p>
+            </div>
+        </header>
+
+        <div class="tabs-bar">
+            <button class="tab-btn active" onclick="mudarAba('checklist', this)"><i class="fa-solid fa-list-check"></i> Checklist</button>
+            <button class="tab-btn" onclick="mudarAba('pomodoro', this)"><i class="fa-solid fa-stopwatch"></i> Cronômetro</button>
+            <button class="tab-btn" onclick="mudarAba('anotacoes', this)"><i class="fa-solid fa-note-sticky"></i> Anotações</button>
+        </div>
+
+        <div class="tab-content active" id="tab-checklist">
+            {% if tarefas %}
+            {% for t in tarefas %}
+            <div class="checklist-item {{ 'done' if t['concluida'] else '' }}" id="tarefa-{{ t['id'] }}">
+                <div class="checklist-check {{ 'done' if t['concluida'] else '' }}" onclick="toggleTarefa({{ t['id'] }})">
+                    <i class="fa-solid fa-check" style="{{ '' if t['concluida'] else 'display:none;' }}"></i>
+                </div>
+                <span class="checklist-nome">{{ t['nome'] }}</span>
+                <form method="POST" action="{{ url_for('excluir_tarefa', tarefa_id=t['id']) }}" onsubmit="return confirm('Excluir esta tarefa?');">
+                    <button type="submit" class="btn-icon-danger"><i class="fa-solid fa-trash"></i></button>
+                </form>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <i class="fa-solid fa-list-check"></i>
+                <p>Nenhuma tarefa ainda. Quebre a matéria em passos pequenos!</p>
+            </div>
+            {% endif %}
+
+            <span class="nova-tarefa-label"><i class="fa-solid fa-circle-plus"></i> Adicionar Tarefa</span>
+            <form method="POST" action="{{ url_for('criar_tarefa', disciplina_id=disciplina['id']) }}" class="nova-tarefa-box">
+                <div class="input-group" style="flex:1; margin-bottom:0;">
+                    <i class="fa-solid fa-list-check icon-left"></i>
+                    <input type="text" name="nome" class="tarefa-input" placeholder="ex: Ler capítulo 3, Fazer exercícios 1-10..." required maxlength="255">
+                </div>
+                <button type="submit" class="btn-primary">Adicionar</button>
+            </form>
+        </div>
+
+        <div class="tab-content" id="tab-pomodoro">
+            <div class="pomodoro-box">
+                <div class="pomodoro-modes">
+                    <button data-min="5" onclick="setModo(5, this)">Pausa Curta (5min)</button>
+                    <button data-min="15" onclick="setModo(15, this)">Pausa Longa (15min)</button>
+                    <button class="active" data-min="25" onclick="setModo(25, this)">Foco (25min)</button>
+                </div>
+
+                <div class="pomodoro-ring" id="pomodoroRing">
+                    <div class="pomodoro-inner">
+                        <div class="pomodoro-display" id="pomodoroDisplay">25:00</div>
+                    </div>
+                </div>
+
+                <div class="pomodoro-controls" style="margin-top: 30px;">
+                    <button class="btn-primary" id="btnIniciar" onclick="iniciarPausar()"><i class="fa-solid fa-play"></i> Iniciar</button>
+                    <button class="btn-cancel" style="max-width:160px; color:#81c784; border-color:#81c784;" onclick="terminarSessao()"><i class="fa-solid fa-flag-checkered"></i> Terminar</button>
+                    <button class="btn-cancel" style="max-width:160px;" onclick="resetarPomodoro()"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-anotacoes">
+            <div class="anotacoes-modos">
+                <button type="button" class="modo-btn active" onclick="mudarModoAnotacao('texto', this)"><i class="fa-solid fa-font"></i> Texto</button>
+                <button type="button" class="modo-btn" onclick="mudarModoAnotacao('desenho', this)"><i class="fa-solid fa-pen-nib"></i> Caderno Virtual</button>
+            </div>
+
+            <div class="anotacoes-box" id="modoTexto">
+                <form method="POST" action="{{ url_for('salvar_anotacoes', disciplina_id=disciplina['id']) }}">
+                    <textarea name="anotacoes" id="campoAnotacoes" placeholder="Escreva aqui seus resumos e anotações sobre essa disciplina...">{{ disciplina['anotacoes'] or '' }}</textarea>
+                    <div class="form-inline" style="margin-top: 16px;">
+                        <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar Anotações</button>
+                        <button type="button" class="btn-cancel" style="max-width: 220px;" onclick="baixarAnotacoes()"><i class="fa-solid fa-download"></i> Salvar no dispositivo</button>
+                        <button type="button" class="btn-cancel" style="max-width: 180px; color: #e57373; border-color: #e57373;" onclick="apagarAnotacoes()"><i class="fa-solid fa-trash"></i> Apagar tudo</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="anotacoes-box" id="modoDesenho" style="display:none;">
+                <div class="desenho-toolbar">
+                    <div class="paleta-cores">
+                        <button type="button" class="cor-btn active" style="background:#2c2c2c;" data-cor="#2c2c2c" onclick="setCor('#2c2c2c', this)"></button>
+                        <button type="button" class="cor-btn" style="background:#e57373;" data-cor="#e57373" onclick="setCor('#e57373', this)"></button>
+                        <button type="button" class="cor-btn" style="background:#5b7c99;" data-cor="#5b7c99" onclick="setCor('#5b7c99', this)"></button>
+                        <button type="button" class="cor-btn" style="background:#81c784;" data-cor="#81c784" onclick="setCor('#81c784', this)"></button>
+                        <button type="button" class="cor-btn" style="background:#ffb74d;" data-cor="#ffb74d" onclick="setCor('#ffb74d', this)"></button>
+                        <button type="button" class="cor-btn" style="background:#9575cd;" data-cor="#9575cd" onclick="setCor('#9575cd', this)"></button>
+                        <button type="button" class="ferramenta-btn" id="btnBorracha" onclick="ativarBorracha()" title="Borracha"><i class="fa-solid fa-eraser"></i></button>
+                    </div>
+                    <input type="range" id="espessura" min="1" max="24" value="3" title="Espessura do traço">
+                </div>
+
+                <canvas id="canvasDesenho" class="canvas-desenho" width="800" height="400"></canvas>
+
+                <div class="form-inline" style="margin-top: 16px;">
+                    <button type="button" class="btn-primary" onclick="salvarDesenho()"><i class="fa-solid fa-floppy-disk"></i> Salvar Caderno</button>
+                    <button type="button" class="btn-cancel" style="max-width: 220px;" onclick="baixarDesenho()"><i class="fa-solid fa-download"></i> Salvar no dispositivo</button>
+                    <button type="button" class="btn-cancel" style="max-width: 180px; color: #e57373; border-color: #e57373;" onclick="limparDesenho()"><i class="fa-solid fa-trash"></i> Apagar tudo</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="guia-compacto" id="guia-disciplina">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Como usar:</b> no <b>Checklist</b>, quebre a matéria em tarefas pequenas e marque conforme for concluindo. No <b>Cronômetro</b>, escolha um tempo e estude em ciclos de foco — ele continua contando mesmo se você sair da página. Nas <b>Anotações</b>, escreva resumos em texto ou desenhe no Caderno Virtual.</span>
+            <button class="guia-fechar" onclick="fecharGuia('guia-disciplina')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <script>
+        function baixarAnotacoes() {
+            const texto = document.getElementById('campoAnotacoes').value;
+            const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Focus - Anotações - {{ disciplina["nome"] }}.txt`;
+            link.click();
+        }
+
+        function apagarAnotacoes() {
+            if (!confirm('Isso vai apagar todo o texto das anotações. Deseja continuar?')) return;
+            document.getElementById('campoAnotacoes').value = '';
+        }
+
+        // ---- MODO TEXTO / DESENHO ----
+        function mudarModoAnotacao(modo, btn) {
+            document.querySelectorAll('.anotacoes-modos .modo-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('modoTexto').style.display = modo === 'texto' ? 'block' : 'none';
+            document.getElementById('modoDesenho').style.display = modo === 'desenho' ? 'block' : 'none';
+        }
+
+        // ---- DESENHO (CANVAS) ----
+        const canvas = document.getElementById('canvasDesenho');
+        const ctx = canvas.getContext('2d');
+        let desenhando = false;
+        let corAtual = '#2c2c2c';
+        let modoBorracha = false;
+        const desenhoSalvo = {{ (disciplina['desenho'] or '')|tojson }};
+
+        function setCor(cor, btn) {
+            corAtual = cor;
+            modoBorracha = false;
+            document.getElementById('btnBorracha').classList.remove('active');
+            document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function ativarBorracha() {
+            modoBorracha = true;
+            document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btnBorracha').classList.add('active');
+        }
+
+        function posicaoCanvas(e) {
+            const rect = canvas.getBoundingClientRect();
+            const evento = e.touches ? e.touches[0] : e;
+            const escalaX = canvas.width / rect.width;
+            const escalaY = canvas.height / rect.height;
+            return {
+                x: (evento.clientX - rect.left) * escalaX,
+                y: (evento.clientY - rect.top) * escalaY,
+            };
+        }
+
+        function iniciarDesenho(e) {
+            desenhando = true;
+            const pos = posicaoCanvas(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            e.preventDefault();
+        }
+
+        function desenhar(e) {
+            if (!desenhando) return;
+            const pos = posicaoCanvas(e);
+            const espessura = document.getElementById('espessura').value;
+            ctx.lineCap = 'round';
+            if (modoBorracha) {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = espessura * 3;
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = espessura;
+                ctx.strokeStyle = corAtual;
+            }
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            e.preventDefault();
+        }
+
+        function pararDesenho() { desenhando = false; }
+
+        canvas.addEventListener('mousedown', iniciarDesenho);
+        canvas.addEventListener('mousemove', desenhar);
+        canvas.addEventListener('mouseup', pararDesenho);
+        canvas.addEventListener('mouseleave', pararDesenho);
+        canvas.addEventListener('touchstart', iniciarDesenho);
+        canvas.addEventListener('touchmove', desenhar);
+        canvas.addEventListener('touchend', pararDesenho);
+
+        function limparDesenho() {
+            if (!confirm('Isso vai apagar todo o conteúdo do caderno. Deseja continuar?')) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // O canvas em si é transparente por baixo (só a CSS deixa parecendo branco).
+        // Pra exportar/salvar com fundo branco de verdade, desenhamos tudo por cima
+        // de uma cópia com fundo branco preenchido primeiro.
+        function gerarImagemComFundoBranco() {
+            const temp = document.createElement('canvas');
+            temp.width = canvas.width;
+            temp.height = canvas.height;
+            const tempCtx = temp.getContext('2d');
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, temp.width, temp.height);
+            tempCtx.drawImage(canvas, 0, 0);
+            return temp.toDataURL('image/png');
+        }
+
+        async function salvarDesenho() {
+            const dataUrl = gerarImagemComFundoBranco();
+            await fetch(`{{ url_for('salvar_desenho', disciplina_id=disciplina['id']) }}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `desenho=${encodeURIComponent(dataUrl)}`
+            });
+        }
+
+        function baixarDesenho() {
+            const link = document.createElement('a');
+            link.href = gerarImagemComFundoBranco();
+            link.download = `Focus - Caderno Virtual - {{ disciplina["nome"] }}.png`;
+            link.click();
+        }
+
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+
+        function mudarAba(nome, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + nome).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        async function toggleTarefa(id) {
+            const r = await fetch(`/tarefa/${id}/concluir`, { method: 'POST' });
+            const data = await r.json();
+            const item = document.getElementById('tarefa-' + id);
+            const check = item.querySelector('.checklist-check');
+            const icon = check.querySelector('i');
+            item.classList.toggle('done', data.concluida);
+            check.classList.toggle('done', data.concluida);
+            icon.style.display = data.concluida ? 'block' : 'none';
+        }
+
+        // CRONÔMETRO POMODORO — o estado fica salvo no navegador, então
+        // continua de onde parou mesmo se você sair e voltar pra essa disciplina.
+        const POMODORO_KEY = 'focus_pomodoro_{{ disciplina["id"] }}';
+        let totalSegundos = 25 * 60;
+        let segundosRestantes = totalSegundos;
+        let intervalo = null;
+        let rodando = false;
+
+        function salvarEstadoPomodoro() {
+            localStorage.setItem(POMODORO_KEY, JSON.stringify({
+                totalSegundos, segundosRestantes, rodando,
+                marcador: Date.now(),
+                modoAtivo: document.querySelector('.pomodoro-modes button.active')?.dataset.min || 25
+            }));
+        }
+
+        function restaurarEstadoPomodoro() {
+            const salvo = localStorage.getItem(POMODORO_KEY);
+            if (!salvo) return;
+            try {
+                const estado = JSON.parse(salvo);
+                totalSegundos = estado.totalSegundos;
+                segundosRestantes = estado.segundosRestantes;
+
+                if (estado.rodando) {
+                    const segundosPassados = Math.floor((Date.now() - estado.marcador) / 1000);
+                    segundosRestantes = Math.max(0, segundosRestantes - segundosPassados);
+                }
+
+                document.querySelectorAll('.pomodoro-modes button').forEach(b => {
+                    b.classList.toggle('active', b.dataset.min === String(estado.modoAtivo));
+                });
+
+                if (segundosRestantes <= 0 && estado.rodando) {
+                    segundosRestantes = 0;
+                    rodando = false;
+                    registrarSessaoConcluida();
+                    localStorage.removeItem(POMODORO_KEY);
+                } else if (estado.rodando) {
+                    iniciarPausar();
+                }
+            } catch (e) {}
+        }
+
+        function atualizarDisplay() {
+            const min = Math.floor(segundosRestantes / 60).toString().padStart(2, '0');
+            const seg = (segundosRestantes % 60).toString().padStart(2, '0');
+            document.getElementById('pomodoroDisplay').innerText = `${min}:${seg}`;
+            const progresso = ((totalSegundos - segundosRestantes) / totalSegundos) * 360;
+            document.getElementById('pomodoroRing').style.setProperty('--pomodoro-progress', progresso + 'deg');
+        }
+
+        function setModo(minutos, btn) {
+            pararPomodoro();
+            document.querySelectorAll('.pomodoro-modes button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            totalSegundos = minutos * 60;
+            segundosRestantes = totalSegundos;
+            atualizarDisplay();
+            salvarEstadoPomodoro();
+        }
+
+        function iniciarPausar() {
+            if (rodando) {
+                pararPomodoro();
+                salvarEstadoPomodoro();
+                return;
+            }
+            rodando = true;
+            document.getElementById('btnIniciar').innerHTML = '<i class="fa-solid fa-pause"></i> Pausar';
+            intervalo = setInterval(() => {
+                segundosRestantes--;
+                atualizarDisplay();
+                salvarEstadoPomodoro();
+                if (segundosRestantes <= 0) {
+                    pararPomodoro();
+                    registrarSessaoConcluida();
+                    localStorage.removeItem(POMODORO_KEY);
+                    alert('Sessão concluída! 🎉');
+                }
+            }, 1000);
+        }
+
+        function pararPomodoro() {
+            clearInterval(intervalo);
+            rodando = false;
+            document.getElementById('btnIniciar').innerHTML = '<i class="fa-solid fa-play"></i> Iniciar';
+        }
+
+        function resetarPomodoro() {
+            pararPomodoro();
+            segundosRestantes = totalSegundos;
+            atualizarDisplay();
+            localStorage.removeItem(POMODORO_KEY);
+        }
+
+        function terminarSessao() {
+            const decorrido = totalSegundos - segundosRestantes;
+            const minutos = Math.round(decorrido / 60);
+            pararPomodoro();
+            if (minutos > 0) {
+                fetch(`{{ url_for('registrar_sessao', disciplina_id=disciplina['id']) }}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `minutos=${minutos}`
+                });
+                alert(`Sessão encerrada! ${minutos} minuto${minutos !== 1 ? 's' : ''} registrado${minutos !== 1 ? 's' : ''}.`);
+            }
+            segundosRestantes = totalSegundos;
+            atualizarDisplay();
+            localStorage.removeItem(POMODORO_KEY);
+        }
+
+        function registrarSessaoConcluida() {
+            const minutos = Math.round(totalSegundos / 60);
+            fetch(`{{ url_for('registrar_sessao', disciplina_id=disciplina['id']) }}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `minutos=${minutos}`
+            });
+        }
+
+        function fecharGuia(id) {
+            document.getElementById(id).classList.remove('show');
+            localStorage.setItem('focus_guia_fechado_' + id, '1');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+            atualizarDisplay();
+            restaurarEstadoPomodoro();
+            atualizarDisplay();
+            if (desenhoSalvo) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0);
+                img.src = desenhoSalvo;
+            }
+            document.querySelectorAll('.guia-compacto').forEach(g => {
+                if (!localStorage.getItem('focus_guia_fechado_' + g.id)) g.classList.add('show');
+            });
+        });
+    </script>
+
+</body>
+</html>
