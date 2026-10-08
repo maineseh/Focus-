@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - Painel do Responsável</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsavel.css') }}">
+    <style>
+        .rc-msg { max-width: 72%; padding: 10px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+        .rc-msg.do-filho { margin-left: auto; background: var(--r-primary); color: white; border-bottom-right-radius: 4px; }
+        .rc-msg.de-outro { background: #eef1f8; color: var(--r-text); border-bottom-left-radius: 4px; }
+        .rc-msg .rc-autor { font-size: 11px; font-weight: 800; opacity: 0.75; display: block; margin-bottom: 3px; }
+        .rc-msg img { max-width: 220px; border-radius: 10px; display: block; margin-top: 4px; }
+        .rc-msg .rc-hora { display: block; font-size: 10px; opacity: 0.65; margin-top: 4px; }
+    </style>
+</head>
+<body class="r-body">
+    <nav class="r-nav">
+        <div class="r-nav-content">
+            <a href="{{ url_for('responsavel_painel') }}" class="r-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" alt="Focus">
+                <span>Focus<small>Painel do Responsável</small></span>
+            </a>
+            <a href="{{ url_for('responsavel_sair') }}" class="r-sair"><i class="fa-solid fa-power-off"></i> Sair</a>
+        </div>
+    </nav>
+
+    <div class="r-container">
+        <a href="{{ voltar_url }}" class="r-back" aria-label="Voltar"><i class="fa-solid fa-arrow-left"></i></a>
+
+        <div class="r-header">
+            <img src="{{ url_for('static', filename=icone_url) }}">
+            <div>
+                <h1>{{ titulo }}</h1>
+                <p>Leitura da conversa de @{{ filho['username'] }} — só você, responsável, vê essa tela.</p>
+            </div>
+        </div>
+
+        <div class="r-card">
+            {% if mensagens %}
+                {% for m in mensagens %}
+                <div class="rc-msg {{ 'do-filho' if m['autor_id'] == filho['id'] else 'de-outro' }}">
+                    {% if m['autor_id'] != filho['id'] %}<span class="rc-autor">@{{ m['autor_username'] }}</span>{% endif %}
+                    {% if m['tipo'] == 'imagem' %}
+                        <img src="{{ url_for('static', filename=m['conteudo']) }}">
+                    {% else %}
+                        {{ m['conteudo'] }}
+                    {% endif %}
+                    <span class="rc-hora">{{ m['criado_em'] }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+            <p style="color: var(--r-text-soft); font-weight: 600; margin:0;">Ainda não há mensagens nesta conversa.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

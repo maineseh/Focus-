@@ -1,0 +1,108 @@
+/* ============================================================
+   ACESSIBILIDADE — FUNCIONALIDADES COMPARTILHADAS EM TODO O SITE
+   Aplicadas via classes no <body>, controladas por static/js/accessibility.js
+   ============================================================ */
+
+/* ============================================================
+   OVERLAY DE HUMOR — tingimento sutil da tela conforme o nível de
+   energia/humor registrado no Dashboard (slider de bateria).
+   Centralizado aqui para funcionar em TODO o site.
+   Controlado via --mood-overlay / --mood-intensity por
+   static/js/accessibility.js. Pode ser desativado em
+   Configurações > Acessibilidade ("Overlay de Humor").
+   ============================================================ */
+:root {
+    --mood-overlay: transparent;
+    --mood-intensity: 0;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--mood-overlay);
+    opacity: var(--mood-intensity);
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 0.8s ease, background 0.8s ease;
+}
+
+/* Alto contraste sempre desativa o overlay de humor, para não comprometer legibilidade */
+body.high-contrast {
+    --mood-overlay: transparent !important;
+    --mood-intensity: 0 !important;
+}
+
+/* Fonte para Dislexia (OpenDyslexic) */
+@font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-400-normal.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-400-normal.woff') format('woff');
+}
+
+@font-face {
+    font-family: 'OpenDyslexic';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-700-normal.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/fontsource/fonts/opendyslexic@latest/latin-700-normal.woff') format('woff');
+}
+
+/* Aplica a fonte em TODOS os elementos e campos do site (inputs, botões, labels,
+   selects, textareas, links, spans, etc.), exceto nos ícones (Font Awesome),
+   que dependem da própria fonte de ícones para renderizar corretamente. */
+body.dyslexic-font,
+body.dyslexic-font *:not([class*="fa-"]):not(.fa) {
+    font-family: 'OpenDyslexic', 'Nunito', sans-serif !important;
+}
+
+body.dyslexic-font input::placeholder,
+body.dyslexic-font textarea::placeholder {
+    font-family: 'OpenDyslexic', 'Nunito', sans-serif !important;
+}
+
+/* Reduzir Movimento — desativa animações e transições */
+body.reduce-motion,
+body.reduce-motion * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+/* ============================================================
+   TRANSIÇÃO SUAVE ENTRE PÁGINAS (View Transitions API nativa do
+   navegador). Cada página tem <meta name="view-transition"
+   content="same-origin"> no <head>, e o spa.js liga
+   htmx.config.globalViewTransitions pra fazer o htmx chamar
+   document.startViewTransition() em cada troca boosted — sem isso,
+   a meta tag sozinha não tem efeito (ela só vale pra navegação real
+   de página, e o hx-boost navega via AJAX). Aqui é onde desenhamos
+   a transição em si: fade com leve deslizamento, no mesmo espírito
+   do slideUp usado no resto do app. Respeita "Reduzir Movimento".
+   ============================================================ */
+@keyframes focusPageOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes focusPageIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+::view-transition-old(root) {
+    animation: focusPageOut 0.2s ease both;
+}
+
+::view-transition-new(root) {
+    animation: focusPageIn 0.28s ease both;
+}
+
+body.reduce-motion::view-transition-old(root),
+body.reduce-motion::view-transition-new(root) {
+    animation: none;
+}

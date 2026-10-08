@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Criar Conta | Focus OS</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cadastro.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+</head>
+<body>
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+<script>
+(function () {
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if (theme !== 'default') document.body.classList.add(theme + '-theme');
+})();
+</script>
+
+<div class="register-card">
+    <header class="header-reg">
+        <img src="{{ url_for('static', filename='img/cat.png') }}" class="logo-icon" alt="Logo Focus">
+        <h2>Criar Conta</h2>
+        <p>Inicie seu protocolo Focus OS</p>
+    </header>
+
+    {% if erro %}
+        <div class="erro">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="input-group">
+            <i class="fa-regular fa-user icon-left"></i>
+            <input type="text" name="nome" placeholder="Nome Completo" value="{{ nome }}" required>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-regular fa-envelope icon-left"></i>
+            <input type="email" name="email" placeholder="E-mail Operacional" value="{{ email }}" required>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" name="senha" id="senha_cad" placeholder="Crie uma senha forte" required>
+            <button type="button" class="eye-btn" onclick="toggleSenha('senha_cad', 'eye-cad')">
+                <i class="fa-regular fa-eye-slash" id="eye-cad"></i>
+            </button>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" name="confirma_senha" id="confirma_cad" placeholder="Confirme sua senha" required>
+            <i class="fa-solid fa-shield-check" style="position: absolute; right: 18px; top: 18px; color: #b0bec5; font-size: 18px; opacity: 0.5;"></i>
+        </div>
+
+        <div class="options">
+            <label class="option-row">
+                <input type="checkbox" name="lembrar" checked>
+                <span>Lembrar dispositivo</span>
+            </label>
+            <label class="option-row">
+                <input type="checkbox" name="mostrar_nome_real">
+                <span>Mostrar meu nome real no perfil</span>
+            </label>
+        </div>
+
+        <button type="submit" class="btn">Finalizar Cadastro</button>
+    </form>
+
+    <a href="{{ url_for('login') }}" class="btn-outline">
+        <i class="fa-solid fa-arrow-left"></i> Voltar ao Acesso
+    </a>
+</div>
+
+<script>
+
+    function toggleSenha(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace("fa-eye-slash", "fa-eye");
+        } else {
+            input.type = "password";
+            icon.classList.replace("fa-eye", "fa-eye-slash");
+        }
+    }
+    
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Perfil - Comunidades - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/comunidades.css') }}">
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('comunidades') }}" class="active"><i class="fa-solid fa-users"></i> Comunidades</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('controle_parental') }}" class="dropdown-item"><i class="fa-solid fa-user-shield"></i> Controle Parental</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;" hx-boost="false"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 620px;">
+        <a href="{{ origem }}" style="display:inline-flex; align-items:center; gap:6px; color:var(--text-soft); text-decoration:none; font-weight:700; font-size:13px; margin-bottom:16px;">
+            <i class="fa-solid fa-arrow-left"></i> Voltar
+        </a>
+
+        <div class="com-card com-perfil-card">
+            <div class="com-perfil-banner"></div>
+            <div class="com-perfil-body">
+                <div class="com-avatar-wrap">
+                    <img src="{{ url_for('static', filename=perfil['foto_perfil'] or 'img/ex1.png') }}" class="com-perfil-avatar">
+                    <span class="com-dot status-{{ status_exibicao }}" style="width:18px; height:18px; bottom:4px; right:4px;"></span>
+                </div>
+                <div class="com-perfil-nome">
+                    {{ perfil['nome'] if perfil['mostrar_nome_real'] and perfil['nome'] else perfil['username'] }}
+                </div>
+                <div class="com-perfil-user">@{{ perfil['username'] }} · {{ {'online': 'Online', 'ausente': 'Ausente', 'ocupado': 'Ocupado', 'offline': 'Offline'}[status_exibicao] }}</div>
+                {% if perfil['pronomes'] %}
+                <div class="com-perfil-pronomes">{{ perfil['pronomes'] }}</div>
+                {% endif %}
+
+                {% if perfil['bio'] %}
+                <p class="com-perfil-bio">{{ perfil['bio'] }}</p>
+                {% endif %}
+
+                <div class="com-perfil-acoes">
+                    {% if eu_bloqueei %}
+                        <form method="POST" action="{{ url_for('comunidades_desbloquear', amigo_id=perfil['id']) }}" hx-boost="false">
+                            <button type="submit" class="com-btn ghost"><i class="fa-solid fa-lock-open"></i> Desbloquear</button>
+                        </form>
+                    {% elif relacao == 'amigo' %}
+                        <a href="{{ url_for('comunidades_dm', amigo_id=perfil['id'], origem=request.path) }}" class="com-btn"><i class="fa-solid fa-message"></i> Conversar</a>
+                        <form method="POST" action="{{ url_for('comunidades_remover_amigo', amigo_id=perfil['id']) }}" hx-boost="false" onsubmit="return confirm('Remover essa amizade?');">
+                            <button type="submit" class="com-btn ghost"><i class="fa-solid fa-user-minus"></i> Remover amigo</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('comunidades_bloquear', amigo_id=perfil['id']) }}" hx-boost="false" onsubmit="return confirm('Bloquear esse usuário?');">
+                            <button type="submit" class="com-btn danger"><i class="fa-solid fa-ban"></i> Bloquear</button>
+                        </form>
+                    {% elif relacao == 'pendente_enviado' %}
+                        <form method="POST" action="{{ url_for('comunidades_recusar', amizade_id=amizade_id) }}" hx-boost="false">
+                            <button type="submit" class="com-btn ghost"><i class="fa-solid fa-xmark"></i> Cancelar pedido</button>
+                        </form>
+                    {% elif relacao == 'pendente_recebido' %}
+                        <form method="POST" action="{{ url_for('comunidades_aceitar', amizade_id=amizade_id) }}" hx-boost="false">
+                            <button type="submit" class="com-btn"><i class="fa-solid fa-check"></i> Aceitar pedido</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('comunidades_recusar', amizade_id=amizade_id) }}" hx-boost="false">
+                            <button type="submit" class="com-btn ghost"><i class="fa-solid fa-xmark"></i> Recusar</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('comunidades_solicitar') }}" hx-boost="false">
+                            <input type="hidden" name="username" value="{{ perfil['username'] }}">
+                            <button type="submit" class="com-btn"><i class="fa-solid fa-user-plus"></i> Adicionar amigo</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('comunidades_bloquear', amigo_id=perfil['id']) }}" hx-boost="false" onsubmit="return confirm('Bloquear esse usuário?');">
+                            <button type="submit" class="com-btn danger"><i class="fa-solid fa-ban"></i> Bloquear</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show'); };
+        window.toggleDropdown = toggleDropdown;
+
+        function initComunidadesPagina() {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if (theme !== 'default') document.body.classList.add(theme + '-theme');
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initComunidadesPagina);
+        } else {
+            initComunidadesPagina();
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar - Painel do Responsável</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsavel.css') }}">
+</head>
+<body class="r-body">
+    <div class="r-auth-wrap">
+        <div class="r-auth-logo">
+            <img src="{{ url_for('static', filename='img/cat.png') }}" alt="Focus">
+        </div>
+        <div class="r-auth-card">
+            <h1>Confirme sua senha</h1>
+            <p>Esse e-mail já tem acesso ao Focus. Digite sua senha pra ativar o acesso a esse novo filho ou filha.</p>
+            <div class="r-auth-email"><i class="fa-solid fa-envelope"></i> {{ email }}</div>
+
+            {% if erro %}
+            <div class="r-error"><i class="fa-solid fa-circle-exclamation"></i> {{ erro }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('responsavel_entrar_token', token=token) }}">
+                <div class="r-field">
+                    <label>Senha</label>
+                    <input type="password" name="senha" required autofocus>
+                </div>
+                <button type="submit" class="r-btn full"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

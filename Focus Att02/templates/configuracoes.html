@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Configurações | Focus OS</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/configuracoes.css') }}">
+
+    <div id="toast" class="toast-engine">
+        <i class="fa-solid fa-microchip fa-spin" style="color: var(--accent); font-size: 28px;"></i>
+        <span>Sincronizando Core...</span>
+    </div>
+
+    <div class="settings-hub">
+        <button type="button" onclick="descartarEVoltar()" class="btn-close-config"><i class="fa-solid fa-xmark"></i></button>
+        <header class="hub-header">
+            <h1>Configurações</h1>
+            <p>Gerenciamento de núcleo e interface Focus.</p>
+        </header>
+
+        {% if erro %}
+        <div style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+        {% endif %}
+
+        {% if sucesso %}
+        <div style="color:#81c784; background:rgba(129,199,132,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-check"></i> {{ sucesso }}
+        </div>
+        {% endif %}
+
+        <div class="config-section">
+            <div class="section-title">Segurança</div>
+
+            <div class="security-block" id="block-email">
+                <div class="security-summary" onclick="toggleSecurity('block-email')">
+                    <div class="security-summary-label"><i class="fa-solid fa-envelope"></i> Trocar E-mail</div>
+                    <i class="fa-solid fa-chevron-down security-chevron"></i>
+                </div>
+                <div class="security-content">
+                    <form method="POST" action="{{ url_for('alterar_email') }}" class="security-form">
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">E-mail atual</label>
+                            <input type="email" value="{{ email }}" disabled style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main); opacity:0.6;">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Novo e-mail</label>
+                            <input type="email" name="novo_email" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Confirme sua senha atual</label>
+                            <input type="password" name="senha_atual" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save-secondary">Salvar Novo E-mail</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="security-block" id="block-senha">
+                <div class="security-summary" onclick="toggleSecurity('block-senha')">
+                    <div class="security-summary-label"><i class="fa-solid fa-lock"></i> Trocar Senha</div>
+                    <i class="fa-solid fa-chevron-down security-chevron"></i>
+                </div>
+                <div class="security-content">
+                    <form method="POST" action="{{ url_for('alterar_senha') }}" class="security-form">
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Senha atual</label>
+                            <input type="password" name="senha_atual" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Nova senha</label>
+                            <input type="password" name="nova_senha" minlength="6" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <div class="setting-item" style="display:block;">
+                            <label style="display:block; font-size:11px; font-weight:800; text-transform:uppercase; opacity:0.6; margin-bottom:8px;">Confirme a nova senha</label>
+                            <input type="password" name="confirma_senha" minlength="6" required style="width:100%; padding:14px; border-radius:14px; border:2px solid var(--border); background:var(--input-bg); color:var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save-secondary">Salvar Nova Senha</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Aparência e Design</div>
+
+            <div class="theme-slider">
+                <button type="button" class="theme-nav" onclick="mudarTema(-1)" aria-label="Tema anterior">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <div class="theme-viewport" id="themeViewport">
+                    <div class="theme-track" id="themeSlides">
+
+                        {% set temas = [
+                            ('default', 'Ocean Sand', '#5b7c99', '#ffd174'),
+                            ('dark', 'Night Grey', '#1a2230', '#d6d2c4'),
+                            ('purple', 'Lavanda', '#8b7cff', '#9a8cff'),
+                            ('algodao', 'Algodão Doce', '#5BCEFA', '#F5A9B8'),
+                            ('focusnight', 'Nightfall', '#0d0b1a', '#4EA1FF'),
+                            ('dracula', 'Dracula', '#282a36', '#ff79c6'),
+                            ('metallic', 'Metallic', '#b0b3bd', '#8f7fff'),
+                            ('nature', 'Nature', '#6fa287', '#a3b18a'),
+                            ('sunset', 'Sunset', '#ff8a5c', '#ff5e9c'),
+                            ('arctic', 'Arctic', '#6fa8d8', '#4f9bd6'),
+                            ('grape', 'Grape', '#7b4b94', '#c86fa0'),
+                            ('sakura', 'Sakura', '#e893b3', '#b98ee0'),
+                            ('cyber', 'Cyber', '#05070d', '#00f0ff'),
+                            ('lavender', 'Lavender', '#6f5fe0', '#ff2ea6'),
+                        ] %}
+
+                        {% for chave, nome, cor1, cor2 in temas %}
+                        <div class="theme-slide{% if loop.first %} active{% endif %}" data-slide="{{ loop.index0 }}" onclick="irParaTema({{ loop.index0 }})">
+                            <div class="theme-card" id="t-{{ chave }}">
+                                <div class="color-preview">
+                                    <div style="background:{{ cor1 }};"></div>
+                                    <div style="background:{{ cor2 }};"></div>
+                                </div>
+                                <b>{{ nome }}</b>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+                <button type="button" class="theme-nav" onclick="mudarTema(1)" aria-label="Próximo tema">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="theme-dots" id="themeDots">
+                {% for chave, nome, cor1, cor2 in temas %}
+                <span class="dot{% if loop.first %} active{% endif %}" onclick="irParaTema({{ loop.index0 }})"></span>
+                {% endfor %}
+            </div>
+        </div>
+
+       <div class="config-section">
+    <div class="section-title">Acessibilidade</div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alto Contraste</b>
+                    <span>Maximizar legibilidade para TEA/Baixa visão.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-contrast" onchange="toggleContrast()"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Tamanho da Letra</b>
+                    <span>Escolha o quanto o texto aumenta em todo o Focus.</span>
+                </div>
+                <div class="text-size-group" role="group" aria-label="Tamanho da letra">
+                    <button type="button" class="text-size-btn" id="ts-normal" onclick="setTextSize('normal')">-A</button>
+                    <button type="button" class="text-size-btn" id="ts-medio" onclick="setTextSize('medio')" style="font-size: 18px;">A</button>
+                    <button type="button" class="text-size-btn" id="ts-grande" onclick="setTextSize('grande')" style="font-size: 21px;">A+</button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Reduzir Movimento</b>
+                    <span>Desativa animações e transições (ideal para TDAH/Ansiedade).</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-motion" onchange="toggleAcc('reduceMotion', 'c-motion')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Fonte para Dislexia</b>
+                    <span>Usa uma tipografia (OpenDyslexic) desenhada para facilitar a leitura.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-dyslexic" onchange="toggleAcc('dyslexicFont', 'c-dyslexic')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Overlay de Humor</b>
+                    <span>Deixa a tela levemente avermelhada ou amarelada conforme o humor/energia registrado no Dashboard.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-mood" checked onchange="toggleAcc('moodOverlay', 'c-mood')"><span class="slider"></span></label>
+            </div>
+
+            <div class="setting-item" style="opacity: 0.55; cursor: default;">
+                <div class="item-info">
+                    <b>Mais opções em breve</b>
+                    <span>Novas configurações de acessibilidade estão a caminho.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Trilha Sonora</div>
+
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Música de fundo</b>
+                    <span>Toca uma trilha ambiente contínua enquanto você usa o Focus.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-som" onchange="toggleSom()"><span class="slider"></span></label>
+            </div>
+
+            <div class="sound-tracks-grid" id="somTrilhasGrid">
+                <!-- preenchido via JS a partir de FocusSoundtrack.TRILHAS -->
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Protocolos do HUD</div>
+            <div class="setting-item">
+                <div class="item-info">
+                    <b>Alertas de Metas</b>
+                    <span>Avisa no Início quando ainda há metas de hoje sem concluir.</span>
+                </div>
+                <label class="switch"><input type="checkbox" id="c-notif" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="section-title">Manutenção</div>
+            <div class="setting-item" onclick="clearCache()" style="cursor:pointer;">
+                <div class="item-info">
+                    <b style="color: #ef4444;">Resetar Protocolos</b>
+                    <span>Limpar preferências e cache local.</span>
+                </div>
+                <i class="fa-solid fa-trash-can" style="color: #ef4444; font-size: 20px;"></i>
+            </div>
+        </div>
+
+        <button class="btn-save-exit" onclick="finalizeConfigs()">Sincronizar e Voltar</button>
+    </div>
+
+    <script>
+    (function () {
+        function toggleSecurity(id) {
+            const bloco = document.getElementById(id);
+            document.querySelectorAll('.security-block').forEach(b => {
+                if (b !== bloco) b.classList.remove('open');
+            });
+            bloco.classList.toggle('open');
+        }
+
+        const TODOS_TEMAS = ['default','dark','purple','algodao','focusnight','dracula','metallic','nature','sunset','arctic','grape','sakura','cyber','lavender'];
+
+        function setTheme(theme) {
+            TODOS_TEMAS.forEach(t => { if (t !== 'default') document.body.classList.remove(t + '-theme'); });
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+
+            if (theme !== 'default') {
+                document.body.classList.add(theme + '-theme');
+            }
+            const cardAtivo = document.getElementById('t-' + theme);
+            if (cardAtivo) cardAtivo.classList.add('active');
+
+            localStorage.setItem('focus_theme', theme);
+        }
+
+        /* Carrossel de temas (mesmo padrão de setas usado em Meu Desempenho) */
+        let temaSlideAtual = 0;
+        const totalTemaSlides = TODOS_TEMAS.length;
+
+        function irParaTema(indice) {
+            temaSlideAtual = indice;
+            document.querySelectorAll('#themeSlides .theme-slide').forEach((el, i) => el.classList.toggle('active', i === temaSlideAtual));
+            document.querySelectorAll('#themeDots .dot').forEach((el, i) => el.classList.toggle('active', i === temaSlideAtual));
+            centralizarTrack();
+            setTheme(TODOS_TEMAS[temaSlideAtual]);
+        }
+
+        function centralizarTrack() {
+            const viewport = document.getElementById('themeViewport');
+            const track = document.getElementById('themeSlides');
+            const item = track.children[temaSlideAtual];
+            if (!viewport || !item) return;
+            const offset = (viewport.clientWidth / 2) - (item.offsetLeft + item.offsetWidth / 2);
+            track.style.transform = `translateX(${offset}px)`;
+        }
+
+        // Atribuição direta (não addEventListener) pra não acumular um
+        // listener novo em window a cada revisita a essa página via
+        // navegação boosted do htmx (window sobrevive à troca do <body>).
+        window.onresize = centralizarTrack;
+
+        function mudarTema(direcao) {
+            let novo = temaSlideAtual + direcao;
+            if (novo < 0) novo = totalTemaSlides - 1;
+            if (novo >= totalTemaSlides) novo = 0;
+            irParaTema(novo);
+        }
+
+        function salvarAcessibilidade(overrides) {
+            const atual = JSON.parse(localStorage.getItem('focus_accessibility') || '{}');
+            const config = Object.assign({
+                contrast: false, textSize: 'normal', reduceMotion: false,
+                dyslexicFont: false, moodOverlay: true
+            }, atual, overrides || {});
+            localStorage.setItem('focus_accessibility', JSON.stringify(config));
+            return config;
+        }
+
+        function aplicarEstadoVisual(config) {
+            if (window.FocusAccessibility) {
+                window.FocusAccessibility.applyMoodOverlay(config);
+            }
+            document.body.classList.toggle('high-contrast', !!config.contrast);
+            document.body.classList.toggle('reduce-motion', !!config.reduceMotion);
+            document.body.classList.toggle('dyslexic-font', !!config.dyslexicFont);
+
+            document.body.classList.remove('text-medio', 'text-grande');
+            if (config.textSize === 'medio') document.body.classList.add('text-medio');
+            if (config.textSize === 'grande') document.body.classList.add('text-grande');
+
+            document.querySelectorAll('#ts-normal,#ts-medio,#ts-grande').forEach(b => b.classList.remove('active'));
+            document.getElementById('ts-' + (config.textSize || 'normal')).classList.add('active');
+        }
+
+        function toggleContrast() {
+            const isChecked = document.getElementById('c-contrast').checked;
+            const config = salvarAcessibilidade({ contrast: isChecked });
+            aplicarEstadoVisual(config);
+        }
+
+        function toggleAcc(campo, inputId) {
+            const isChecked = document.getElementById(inputId).checked;
+            const config = salvarAcessibilidade({ [campo]: isChecked });
+            aplicarEstadoVisual(config);
+        }
+
+        function setTextSize(tamanho) {
+            const config = salvarAcessibilidade({ textSize: tamanho });
+            aplicarEstadoVisual(config);
+        }
+
+        // --- Trilha sonora de fundo ---
+        function renderSomTrilhas() {
+            const grid = document.getElementById('somTrilhasGrid');
+            if (!grid || !window.FocusSoundtrack) return;
+            const cfg = window.FocusSoundtrack.getConfig();
+            grid.innerHTML = window.FocusSoundtrack.TRILHAS.map(t => `
+                <div class="sound-track-card ${cfg.trilha === t.id ? 'active' : ''}" onclick="escolherTrilha(${t.id})">
+                    <i class="fa-solid ${t.icone}"></i>
+                    <span>${t.nome}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleSom() {
+            const ligado = document.getElementById('c-som').checked;
+            if (window.FocusSoundtrack) window.FocusSoundtrack.setEnabled(ligado);
+        }
+
+        function escolherTrilha(indice) {
+            if (window.FocusSoundtrack) window.FocusSoundtrack.setTrilha(indice);
+            const chk = document.getElementById('c-som');
+            if (chk) chk.checked = true;
+            renderSomTrilhas();
+        }
+
+        function clearCache() {
+            if(confirm("Deseja resetar todos os protocolos visuais?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function finalizeConfigs() {
+            const settings = {
+                notif: document.getElementById('c-notif').checked
+            };
+
+            localStorage.setItem('focus_global_settings', JSON.stringify(settings));
+            document.getElementById('toast').classList.add('show');
+
+            setTimeout(() => { focusNavegarSemPiscar("{{ origem }}"); }, 2000);
+        }
+
+        // (a função que evita o "flash" de tema ao sair desta tela agora
+        // mora em spa.js, compartilhada com o resto do site — veja
+        // focusNavegarSemPiscar)
+
+        // --- Descartar alterações não sincronizadas ---
+        // Vários ajustes desta tela (tema, acessibilidade, trilha sonora) se
+        // aplicam na hora pra dar preview, e por isso já vão escrevendo no
+        // localStorage enquanto a pessoa mexe. Isso é ótimo pro preview, mas
+        // fechar com o X não deveria manter essas mudanças — só "Sincronizar
+        // e Voltar" deveria. Por isso guardamos o estado de como tudo estava
+        // ao abrir a tela, e se o X for clicado, devolvemos tudo pra esse
+        // estado antes de sair.
+        let snapshotConfiguracoes = null;
+
+        function tirarSnapshotConfiguracoes() {
+            const chaves = ['focus_theme', 'focus_accessibility', 'focus_global_settings', 'focus_som_ligado', 'focus_som_trilha'];
+            snapshotConfiguracoes = {};
+            chaves.forEach((chave) => { snapshotConfiguracoes[chave] = localStorage.getItem(chave); });
+        }
+
+        function descartarEVoltar() {
+            if (snapshotConfiguracoes) {
+                Object.keys(snapshotConfiguracoes).forEach((chave) => {
+                    const valor = snapshotConfiguracoes[chave];
+                    if (valor === null) {
+                        localStorage.removeItem(chave);
+                    } else {
+                        localStorage.setItem(chave, valor);
+                    }
+                });
+            }
+            focusNavegarSemPiscar("{{ origem }}");
+        }
+
+        function initConfiguracoes() {
+            tirarSnapshotConfiguracoes();
+
+            // Carregar Tema
+            const temaSalvo = localStorage.getItem('focus_theme') || 'default';
+            const indiceSalvo = TODOS_TEMAS.indexOf(temaSalvo);
+            irParaTema(indiceSalvo >= 0 ? indiceSalvo : 0);
+
+            // Carregar Configurações gerais (notificações)
+            const saved = JSON.parse(localStorage.getItem('focus_global_settings'));
+            if(saved) {
+                document.getElementById('c-notif').checked = saved.notif;
+            }
+
+            // Carregar Trilha sonora de fundo
+            if (window.FocusSoundtrack) {
+                document.getElementById('c-som').checked = window.FocusSoundtrack.getConfig().ligado;
+                renderSomTrilhas();
+            }
+
+            // Carregar Acessibilidade (já aplicada globalmente por accessibility.js,
+            // aqui só sincronizamos os controles desta tela)
+            const acc = Object.assign({
+                contrast: false, textSize: 'normal', reduceMotion: false,
+                dyslexicFont: false, moodOverlay: true
+            }, JSON.parse(localStorage.getItem('focus_accessibility') || '{}'));
+            document.getElementById('c-contrast').checked = !!acc.contrast;
+            document.getElementById('c-motion').checked = !!acc.reduceMotion;
+            document.getElementById('c-dyslexic').checked = !!acc.dyslexicFont;
+            document.getElementById('c-mood').checked = acc.moodOverlay !== false;
+            aplicarEstadoVisual(acc);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initConfiguracoes);
+        } else {
+            initConfiguracoes();
+        }
+
+        window.toggleSecurity = toggleSecurity;
+        window.mudarTema = mudarTema;
+        window.irParaTema = irParaTema;
+        window.toggleContrast = toggleContrast;
+        window.setTextSize = setTextSize;
+        window.toggleAcc = toggleAcc;
+        window.clearCache = clearCache;
+        window.finalizeConfigs = finalizeConfigs;
+        window.descartarEVoltar = descartarEVoltar;
+        window.escolherTrilha = escolherTrilha;
+        window.toggleSom = toggleSom;
+    })();
+    </script>
+</body>
+</html>

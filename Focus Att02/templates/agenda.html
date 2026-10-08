@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Agenda Premium | Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('comunidades') }}"><i class="fa-solid fa-users"></i> Comunidades</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}" class="active"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('controle_parental') }}" class="dropdown-item"><i class="fa-solid fa-user-shield"></i> Controle Parental</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;" hx-boost="false"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="toastGold" class="toast-gold">
+        <i class="fa-solid fa-bolt" style="color:var(--accent); margin-right: 15px;"></i>
+        <span id="toastMessage">Protocolo Sincronizado</span>
+    </div>
+
+    <div class="container">
+        <header class="hud-header">
+            <img src="{{ url_for('static', filename=foto) }}" class="header-avatar">
+            <div>
+                <h1>Agenda</h1>
+                <p>Organize sua semana e acompanhe as metas geradas para você.</p>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <span class="section-eyebrow"><i class="fa-solid fa-calendar-week"></i> Sua semana</span>
+            <button type="button" class="btn-primary" onclick="abrirHistorico()"><i class="fa-solid fa-clock-rotate-left"></i> Ver histórico</button>
+        </div>
+        <div class="week-grid" id="weekGrid"></div>
+
+        <span class="section-eyebrow"><i class="fa-solid fa-bullseye"></i> Metas de hoje</span>
+        <div class="planner-card">
+            <div class="suggestion-header">
+                <div>
+                    <h2>Checklist do momento</h2>
+                    <p id="proximaAtualizacao">Metas geradas pelo sistema com base no seu humor.</p>
+                </div>
+                <div id="moodBadge" class="mood-tag">ANALISANDO...</div>
+            </div>
+
+            <div class="metas-checklist" id="metaContainer"></div>
+        </div>
+
+        <div class="guia-compacto show" id="guia-metas-fim">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Como funciona:</b> a cada 6 horas o sistema gera 3 metas novas com base no seu nível de energia. Marque cada uma no checklist pra fechar o dia na grade semanal ao lado, e acompanhe tudo no histórico.</span>
+        </div>
+    </div>
+
+    <!-- Modal: histórico de metas concluídas (últimos 30 dias) -->
+    <div class="modal-overlay" id="modalHistorico">
+        <div class="modal-box modal-box-lg">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Histórico de metas</h3>
+            <p style="color: var(--text-soft); font-weight: 600; font-size: 14px; margin-bottom: 20px;">
+                Metas concluídas nos últimos 30 dias.
+            </p>
+            <div class="historico-lista" id="historicoLista">
+                <p class="historico-vazio">Carregando...</p>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="fecharHistorico()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: compartilhar uma meta concluída específica -->
+    <div class="modal-overlay" id="modalCompartilharMeta">
+        <div class="modal-box">
+            <h3>Compartilhar meta</h3>
+            <p style="color: var(--text-soft); font-weight: 600; font-size: 14px; margin-bottom: 22px;">
+                Escolha como quer compartilhar essa meta concluída.
+            </p>
+            <div class="share-options">
+                <button type="button" class="btn-mini" onclick="compartilharMetaEmail()"><i class="fa-solid fa-envelope"></i> E-mail</button>
+                <button type="button" class="btn-mini" onclick="compartilharMetaWhatsapp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                <button type="button" class="btn-mini primary" onclick="baixarMeta()"><i class="fa-solid fa-download"></i> Salvar no dispositivo</button>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="fecharCompartilharMeta()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show'); }
+
+        function fecharGuia(id) {
+            document.getElementById(id).classList.remove('show');
+            localStorage.setItem('focus_guia_fechado_' + id, '1');
+        }
+
+        let currentMetas = [];
+        let countdownInterval = null;
+        const energia = Math.max(1, Math.min(5, parseInt(localStorage.getItem('focus_user_energy') || 3)));
+
+        function initAgenda() {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+
+            document.querySelectorAll('.guia-compacto').forEach(g => {
+                if (!localStorage.getItem('focus_guia_fechado_' + g.id)) g.classList.add('show');
+            });
+
+            carregarMetaAtual();
+            renderWeek();
+        }
+
+        // --- Metas de hoje: checklist de 3, renovado a cada 6h pelo servidor ---
+        function carregarMetaAtual() {
+            fetch(`{{ url_for('api_metas_atuais') }}?energia=${energia}`)
+                .then(r => r.json())
+                .then(resp => {
+                    currentMetas = resp.metas || [];
+                    renderMeta();
+                    iniciarContagem(resp.proxima_atualizacao);
+                })
+                .catch(() => {
+                    document.getElementById('metaContainer').innerHTML = '<p class="historico-vazio">Não foi possível carregar suas metas agora. Tente recarregar a página.</p>';
+                });
+        }
+
+        function renderMeta() {
+            if (currentMetas.length === 0) return;
+            document.getElementById('moodBadge').innerText = `Energia: ${currentMetas[0].humor_nome}`;
+
+            const container = document.getElementById('metaContainer');
+            const seloIA = currentMetas[0].usando_ia
+                ? '<div class="micro-ia-selo"><i class="fa-solid fa-wand-magic-sparkles"></i> Geradas pela IA com base nas suas disciplinas</div>'
+                : '';
+            container.innerHTML = seloIA + currentMetas.map(meta => `
+                <div class="meta-item ${meta.concluida ? 'done' : ''}" id="metaItem-${meta.id}">
+                    <button class="meta-checkbox ${meta.concluida ? 'checked' : ''}" onclick="finalizarMeta(${meta.id})" title="Marcar como concluída">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                    <div class="meta-item-text">
+                        <span class="meta-item-title">${meta.titulo}</span>
+                        <p class="meta-item-desc">${meta.descricao}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function iniciarContagem(isoProxima) {
+            clearInterval(countdownInterval);
+            const alvo = new Date(isoProxima).getTime();
+
+            function tick() {
+                const diff = alvo - Date.now();
+                const label = document.getElementById('proximaAtualizacao');
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    label.innerText = 'Gerando suas próximas metas...';
+                    carregarMetaAtual();
+                    return;
+                }
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                label.innerText = `Atualiza em ${h}h ${m}min · geradas com base no seu humor`;
+            }
+
+            tick();
+            countdownInterval = setInterval(tick, 30000);
+        }
+
+        function finalizarMeta(metaId) {
+            const meta = currentMetas.find(m => m.id === metaId);
+            if (!meta) return;
+            fetch(`/api/meta/${metaId}/concluir`, { method: 'POST' })
+                .then(r => r.json())
+                .then(resp => {
+                    if (resp.ok) {
+                        meta.concluida = resp.concluida;
+                        meta.concluida_em = resp.concluida ? new Date().toISOString() : null;
+                        renderMeta();
+                        renderWeek();
+                        if (resp.concluida) showToast("Meta concluída com sucesso! 🚀");
+                    }
+                });
+        }
+
+        function renderWeek() {
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = '';
+            const now = new Date();
+            const todayIdx = now.getDay();
+            const daysShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+            daysShort.forEach((day, i) => {
+                const isToday = (i === todayIdx);
+                const d = new Date();
+                d.setDate(now.getDate() - (todayIdx - i));
+                const concluidaHoje = isToday && currentMetas.length > 0 && currentMetas.every(m => m.concluida);
+
+                grid.innerHTML += `
+                    <div class="day-box ${isToday ? 'active-day' : ''} ${isToday ? getEffortClass() : ''}">
+                        <span class="day-name">${day}</span>
+                        <span class="day-num">${d.getDate()}</span>
+                        ${concluidaHoje ? '<i class="fa-solid fa-circle-check" style="margin-top:10px; color:var(--accent)"></i>' : (isToday ? '<i class="fa-solid fa-location-dot" style="margin-top:10px; color:var(--accent)"></i>' : '')}
+                    </div>
+                `;
+            });
+        }
+
+        function getEffortClass() {
+            if(energia === 1) return "low-effort";
+            if(energia === 5) return "high-effort";
+            return "mid-effort";
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toastGold');
+            document.getElementById('toastMessage').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // --- Histórico de metas concluídas (últimos 30 dias) ---
+        function abrirHistorico() {
+            document.getElementById('modalHistorico').classList.add('show');
+            const lista = document.getElementById('historicoLista');
+            lista.innerHTML = '<p class="historico-vazio">Carregando...</p>';
+
+            fetch('/api/metas_historico')
+                .then(r => r.json())
+                .then(resp => renderHistorico(resp.metas))
+                .catch(() => { lista.innerHTML = '<p class="historico-vazio">Não foi possível carregar o histórico.</p>'; });
+        }
+
+        function fecharHistorico() { document.getElementById('modalHistorico').classList.remove('show'); }
+
+        function renderHistorico(metas) {
+            ultimoHistorico = metas || [];
+            const lista = document.getElementById('historicoLista');
+            if (!metas || metas.length === 0) {
+                lista.innerHTML = '<p class="historico-vazio">Nenhuma meta concluída nos últimos 30 dias ainda.</p>';
+                return;
+            }
+
+            lista.innerHTML = metas.map(m => {
+                const data = new Date(m.concluida_em.replace(' ', 'T'));
+                const dataStr = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                return `
+                    <div class="historico-item">
+                        <div class="historico-info">
+                            <span class="historico-data">${dataStr} · Energia ${m.humor_nome}</span>
+                            <span class="historico-titulo">${m.titulo}</span>
+                            <p class="historico-desc">${m.descricao}</p>
+                        </div>
+                        <button type="button" class="btn-historico-share" onclick="abrirCompartilharMetaPorId(${m.id})" title="Compartilhar">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- Compartilhar uma meta concluída específica ---
+        let ultimoHistorico = [];
+        let metaParaCompartilhar = null;
+
+        function abrirCompartilharMetaPorId(id) {
+            const meta = ultimoHistorico.find(m => m.id === id);
+            if (!meta) return;
+            metaParaCompartilhar = meta;
+            document.getElementById('modalCompartilharMeta').classList.add('show');
+        }
+
+        function fecharCompartilharMeta() { document.getElementById('modalCompartilharMeta').classList.remove('show'); }
+
+        function getTextoMeta() {
+            const m = metaParaCompartilhar;
+            const data = new Date(m.concluida_em.replace(' ', 'T')).toLocaleDateString('pt-BR');
+            let txt = `Meta concluída - Focus\n\n`;
+            txt += `${m.titulo}\n`;
+            txt += `${m.descricao}\n\n`;
+            txt += `Nível de energia: ${m.humor_nome}\n`;
+            txt += `Concluída em: ${data}\n\n`;
+            txt += `Gerado pelo Focus.`;
+            return txt;
+        }
+
+        function baixarMeta() {
+            const texto = getTextoMeta();
+            const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Focus - Meta Concluída - ${metaParaCompartilhar.titulo}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            fecharCompartilharMeta();
+        }
+
+        function compartilharMetaEmail() {
+            const texto = getTextoMeta();
+            const assunto = encodeURIComponent('Minha meta concluída - Focus');
+            window.location.href = `mailto:?subject=${assunto}&body=${encodeURIComponent(texto)}`;
+            fecharCompartilharMeta();
+        }
+
+        function compartilharMetaWhatsapp() {
+            const texto = getTextoMeta();
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+            fecharCompartilharMeta();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAgenda);
+        } else {
+            initAgenda();
+        }
+
+        window.toggleDropdown = toggleDropdown;
+        window.abrirHistorico = abrirHistorico;
+        window.fecharHistorico = fecharHistorico;
+        window.finalizarMeta = finalizarMeta;
+        window.abrirCompartilharMetaPorId = abrirCompartilharMetaPorId;
+        window.fecharCompartilharMeta = fecharCompartilharMeta;
+        window.baixarMeta = baixarMeta;
+        window.compartilharMetaEmail = compartilharMetaEmail;
+        window.compartilharMetaWhatsapp = compartilharMetaWhatsapp;
+    })();
+    </script>
+</body>
+</html>

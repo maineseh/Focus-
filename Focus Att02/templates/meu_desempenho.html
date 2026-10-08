@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Desempenho - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meu_desempenho.css') }}">
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('comunidades') }}"><i class="fa-solid fa-users"></i> Comunidades</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}" class="active"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_limpo }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('controle_parental') }}" class="dropdown-item"><i class="fa-solid fa-user-shield"></i> Controle Parental</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;" hx-boost="false"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <img src="{{ url_for('static', filename=foto_perfil) }}" class="header-avatar">
+            <div>
+                <h1>Meu Desempenho</h1>
+                <p>Acompanhe sua evolução na semana e gere um relatório para compartilhar.</p>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <span class="section-eyebrow"><i class="fa-solid fa-chart-simple"></i> Sua semana</span>
+            <button class="btn-primary" onclick="abrirModalCompartilhar()"><i class="fa-solid fa-share-nodes"></i> Compartilhar relatório</button>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fa-solid fa-clock"></i></div>
+                <div class="metric-info">
+                    <h3>{{ "%.1f"|format(total_horas) }}<span>h</span></h3>
+                    <p>Estudo Total</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fa-solid fa-brain"></i></div>
+                <div class="metric-info">
+                    <h3>{{ media_humor }}<span>/5</span></h3>
+                    <p>Humor Médio</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon"><i class="fa-solid fa-bolt"></i></div>
+                <div class="metric-info">
+                    <h3>{{ pct_extra }}<span>%</span></h3>
+                    <p>Sincronia</p>
+                </div>
+            </div>
+        </div>
+
+        <span class="section-eyebrow"><i class="fa-solid fa-chart-line"></i> Evolução na semana</span>
+        <div class="chart-box">
+            <div class="chart-slider">
+                <button type="button" class="chart-nav" onclick="mudarSlide(-1)" aria-label="Ver anterior">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <div class="chart-slides">
+                    <div class="chart-slide active" data-slide="0">
+                        <span class="slide-titulo"><i class="fa-solid fa-chart-column"></i> Horas de estudo por dia
+                            <button type="button" class="chart-zoom-reset" onclick="resetarZoomDesempenho()" title="Dê zoom com a rodinha do mouse (ou pinça no celular) e arraste pros lados pra navegar. Clique aqui pra resetar o zoom."><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        </span>
+                        <div class="chart-wrapper">
+                            <canvas id="perfChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-slide" data-slide="1">
+                        <span class="slide-titulo"><i class="fa-solid fa-circle-notch"></i> Tempo de estudo por módulo</span>
+                        <div class="chart-percent-wrap">
+                            <div class="chart-wrapper" style="height: 260px; width: 260px;">
+                                <canvas id="pctChart"></canvas>
+                            </div>
+                            <div class="chart-percent-label" id="modulosLabelCentro">
+                                <span class="valor">--</span>
+                                <span class="legenda">Módulo</span>
+                            </div>
+                            <ul class="modulos-legenda" id="modulosLegenda"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="chart-nav" onclick="mudarSlide(1)" aria-label="Ver próximo">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="chart-dots" id="chartDots">
+                <span class="dot active" onclick="irParaSlide(0)"></span>
+                <span class="dot" onclick="irParaSlide(1)"></span>
+            </div>
+        </div>
+
+        <span class="section-eyebrow"><i class="fa-solid fa-wand-magic-sparkles"></i> Análise</span>
+        <div class="insight-ai">
+            <div class="insight-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="insight-text">
+                {% if usando_ia_analise %}
+                <div class="micro-ia-selo"><i class="fa-solid fa-wand-magic-sparkles"></i> Análise gerada por IA com base na sua semana real</div>
+                {% endif %}
+                <div class="ai-message" id="aiMsg"></div>
+            </div>
+        </div>
+
+        <div class="guia-compacto show" id="guia-desempenho-fim">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Como funciona:</b> os gráficos e a análise acima são recalculados com base nas suas sessões de estudo e no humor registrado ao longo da semana. Quanto mais você usa o Focus, mais precisa fica essa leitura.</span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalCompartilhar">
+        <div class="modal-box">
+            <h3>Compartilhar relatório</h3>
+            <p style="color: var(--text-soft); font-weight: 600; font-size: 14px; margin-bottom: 22px;">
+                Escolha como quer enviar o resumo do seu desempenho.
+            </p>
+            <div class="share-options">
+                <button type="button" class="btn-mini" onclick="compartilharEmail()"><i class="fa-solid fa-envelope"></i> E-mail</button>
+                <button type="button" class="btn-mini" onclick="compartilharWhatsapp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                <button type="button" class="btn-mini primary" onclick="baixarRelatorio()"><i class="fa-solid fa-download"></i> Salvar no dispositivo</button>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="fecharModalCompartilhar()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show'); }
+
+        function fecharGuia(id) {
+            document.getElementById(id).classList.remove('show');
+            localStorage.setItem('focus_guia_fechado_' + id, '1');
+        }
+
+        function abrirModalCompartilhar() { document.getElementById('modalCompartilhar').classList.add('show'); }
+        function fecharModalCompartilhar() { document.getElementById('modalCompartilhar').classList.remove('show'); }
+
+        const diasSemana = {{ dias_semana|tojson }};
+        const horasEstudo = {{ horas_estudo|tojson }};
+        const humorStatus = {{ humor_status|tojson }};
+        const modulosLabels = {{ modulos_labels|tojson }};
+        const modulosPct = {{ modulos_pct|tojson }};
+        const desempenhoData = {{ {"nivel": nivel, "user": username_limpo, "media": media_humor, "horas": total_horas, "pct": pct_extra, "analise": analise_texto, "usandoIA": usando_ia_analise}|tojson }};
+
+        // A análise (com IA de verdade ou o texto estático de sempre) já vem
+        // pronta do servidor — aqui só exibimos, não decidimos o conteúdo.
+        function getAIMessage() {
+            return desempenhoData.analise;
+        }
+
+        function getRelatorioTexto() {
+            const dataStr = new Date().toLocaleDateString('pt-BR');
+            let txt = `Relatório de Desempenho - Focus\n`;
+            txt += `Usuário: @${desempenhoData.user}\n`;
+            txt += `Gerado em: ${dataStr}\n\n`;
+            txt += `Estudo total na semana: ${desempenhoData.horas}h\n`;
+            txt += `Humor médio: ${desempenhoData.media}/5\n`;
+            txt += `Sincronia: ${desempenhoData.pct}%\n\n`;
+            txt += `Resumo por dia:\n`;
+            diasSemana.forEach((d, i) => {
+                txt += `- ${d}: ${horasEstudo[i]}h de estudo, humor ${humorStatus[i]}/5\n`;
+            });
+            if (modulosLabels.length) {
+                txt += `\nDistribuição por módulo:\n`;
+                modulosLabels.forEach((nome, i) => {
+                    txt += `- ${nome}: ${modulosPct[i]}%\n`;
+                });
+            }
+            txt += `\nAnálise:\n${getAIMessage()}\n\n`;
+            txt += `Gerado pelo Focus.`;
+            return txt;
+        }
+
+        function baixarRelatorio() {
+            const texto = getRelatorioTexto();
+            const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Focus - Relatório de Desempenho - ${desempenhoData.user}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            fecharModalCompartilhar();
+        }
+
+        function compartilharEmail() {
+            const texto = getRelatorioTexto();
+            const assunto = encodeURIComponent('Meu Relatório de Desempenho - Focus');
+            const corpo = encodeURIComponent(texto);
+            window.location.href = `mailto:?subject=${assunto}&body=${corpo}`;
+            fecharModalCompartilhar();
+        }
+
+        function compartilharWhatsapp() {
+            const texto = getRelatorioTexto();
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+            fecharModalCompartilhar();
+        }
+
+        // --- Carrossel do gráfico (Horas <-> Sincronia em círculo) ---
+        let slideAtual = 0;
+        const totalSlides = 2;
+
+        function irParaSlide(indice) {
+            slideAtual = indice;
+            document.querySelectorAll('.chart-slide').forEach((el, i) => el.classList.toggle('active', i === slideAtual));
+            document.querySelectorAll('#chartDots .dot').forEach((el, i) => el.classList.toggle('active', i === slideAtual));
+        }
+
+        function mudarSlide(direcao) {
+            let novo = slideAtual + direcao;
+            if (novo < 0) novo = totalSlides - 1;
+            if (novo >= totalSlides) novo = 0;
+            irParaSlide(novo);
+        }
+
+        // Paleta de cores pros módulos, lida do tema ativo (cai em tons fixos
+        // se alguma variável não existir, pra nunca ficar sem cor visível).
+        function coresModulos(style) {
+            const base = [
+                style.getPropertyValue('--primary').trim(),
+                style.getPropertyValue('--accent').trim(),
+                style.getPropertyValue('--btn-bg').trim(),
+            ].filter(Boolean);
+            const extra = ['#7c5cff', '#ff9f5c', '#5cc9ff', '#ff5c8a', '#5cff9f', '#ffd15c'];
+            return base.concat(extra);
+        }
+
+        function renderPercentChart() {
+            const canvas = document.getElementById('pctChart');
+            const ctx = canvas.getContext('2d');
+            const style = getComputedStyle(document.body);
+            const corVazio = style.getPropertyValue('--btn-bg').trim();
+            const centro = document.getElementById('modulosLabelCentro');
+            const legendaEl = document.getElementById('modulosLegenda');
+
+            if (!modulosLabels.length) {
+                // Estado vazio: nenhuma sessão de estudo registrada ainda.
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [1], backgroundColor: [corVazio], borderWidth: 0 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '78%',
+                        events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                    }
+                });
+                centro.innerHTML = '<span class="legenda">Sem sessões de estudo registradas ainda</span>';
+                legendaEl.innerHTML = '';
+                return;
+            }
+
+            const cores = coresModulos(style);
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: modulosLabels,
+                    datasets: [{
+                        data: modulosPct,
+                        backgroundColor: modulosLabels.map((_, i) => cores[i % cores.length]),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (item) => `${item.label}: ${item.formattedValue}%`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Módulo com mais tempo estudado, em destaque no centro da rosca.
+            centro.innerHTML = `<span class="valor">${modulosPct[0]}%</span><span class="legenda">${modulosLabels[0]}</span>`;
+
+            legendaEl.innerHTML = modulosLabels.map((nome, i) => `
+                <li><span class="legend-dot" style="background:${cores[i % cores.length]}"></span>${nome} <b>${modulosPct[i]}%</b></li>
+            `).join('');
+        }
+
+        function initDesempenho() {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+
+            document.querySelectorAll('.guia-compacto').forEach(g => {
+                if (!localStorage.getItem('focus_guia_fechado_' + g.id)) g.classList.add('show');
+            });
+
+            initChart();
+            renderPercentChart();
+            startAI();
+        }
+
+        let perfChartInstance = null;
+
+        function initChart() {
+            const ctx = document.getElementById('perfChart').getContext('2d');
+
+            // Lê as cores direto das variáveis CSS do tema ativo (funciona em qualquer tema, incluindo Alto Contraste)
+            const style = getComputedStyle(document.body);
+            const textColor = style.getPropertyValue('--text-soft').trim();
+            const gridColor = style.getPropertyValue('--chart-grid').trim();
+            const barColor = style.getPropertyValue('--primary').trim();
+
+            if (perfChartInstance) { perfChartInstance.destroy(); perfChartInstance = null; }
+
+            // Gráfico simples: só as horas de estudo por dia
+            perfChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: diasSemana,
+                    datasets: [{
+                        label: 'Horas de estudo',
+                        data: horasEstudo,
+                        backgroundColor: barColor,
+                        borderRadius: 10,
+                        maxBarThickness: 48
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            // Um dia tem no máximo 24h — trava o eixo aqui pra
+                            // qualquer valor (mesmo estudando o dia inteiro)
+                            // continuar cabendo no gráfico sem esticar o layout.
+                            max: 24,
+                            ticks: {
+                                color: textColor, font: { weight: '600' },
+                                stepSize: 4,
+                                callback: (v) => v + 'h'
+                            },
+                            grid: { color: gridColor }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { weight: '600' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        // Zoom com a rodinha do mouse/pinça, e arrastar pra
+                        // navegar — só no eixo X, que é onde os dias ficam.
+                        zoom: {
+                            pan: { enabled: true, mode: 'x' },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'x'
+                            },
+                            limits: { x: { min: 'original', max: 'original' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetarZoomDesempenho() {
+            if (perfChartInstance) perfChartInstance.resetZoom();
+        }
+
+        function startAI() {
+            const target = document.getElementById('aiMsg');
+            const msg = getAIMessage();
+
+            let i = 0;
+            function type() {
+                if (i < msg.length) {
+                    target.innerHTML = msg.substring(0, i + 1) + '<span class="ai-cursor"></span>';
+                    i++;
+                    setTimeout(type, 28);
+                }
+            }
+            setTimeout(type, 900);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDesempenho);
+        } else {
+            initDesempenho();
+        }
+
+        window.toggleDropdown = toggleDropdown;
+        window.abrirModalCompartilhar = abrirModalCompartilhar;
+        window.fecharModalCompartilhar = fecharModalCompartilhar;
+        window.compartilharEmail = compartilharEmail;
+        window.compartilharWhatsapp = compartilharWhatsapp;
+        window.baixarRelatorio = baixarRelatorio;
+        window.irParaSlide = irParaSlide;
+        window.mudarSlide = mudarSlide;
+        window.resetarZoomDesempenho = resetarZoomDesempenho;
+    })();
+    </script>
+
+</body>
+</html>

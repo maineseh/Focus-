@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Editar Perfil | Focus OS</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/image-cropper.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/image-cropper.js') }}"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+
+<script>
+(function () {
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if(theme !== 'default') document.body.classList.add(theme + '-theme');
+
+    function ligarSeletorDeFoto() {
+        const input = document.getElementById('fotoArquivoInput');
+        if (!input) return;
+        const textoPicker = document.getElementById('fotoArquivoTexto');
+        input.addEventListener('change', () => {
+            const arquivo = input.files && input.files[0];
+            if (!arquivo) return;
+            input.value = '';
+            window.abrirRecorteImagem(arquivo, (arquivoRecortado) => {
+                // Salva a foto na hora — assim ela não se perde se a pessoa
+                // mudar outra coisa no formulário ou sair da página antes
+                // de clicar em "Salvar Alterações".
+                if (textoPicker) textoPicker.textContent = 'Enviando...';
+                const dados = new FormData();
+                dados.set('foto_arquivo', arquivoRecortado);
+                fetch('{{ url_for("perfil_editar_foto") }}', { method: 'POST', body: dados })
+                    .then((resp) => resp.json())
+                    .then((json) => {
+                        if (json && json.ok) {
+                            document.getElementById('previewFoto').src = json.foto;
+                            document.getElementById('previewFotoWrap').style.display = 'flex';
+                            if (textoPicker) textoPicker.textContent = 'Trocar foto escolhida';
+                            // Desmarca qualquer avatar pronto que estivesse marcado
+                            // (ex: o padrão de conta nova) — senão, ao clicar em
+                            // "Salvar Alterações", esse rádio esquecido sobrescreve
+                            // a foto da galeria que acabou de ser salva.
+                            document.querySelectorAll('input[name="foto_perfil"]').forEach((r) => { r.checked = false; });
+                        } else {
+                            if (textoPicker) textoPicker.textContent = 'Escolher foto da galeria';
+                            alert((json && json.erro) || 'Não deu pra usar essa imagem.');
+                        }
+                    })
+                    .catch(() => {
+                        if (textoPicker) textoPicker.textContent = 'Escolher foto da galeria';
+                        alert('Não deu pra enviar a foto agora. Tente de novo.');
+                    });
+            });
+        });
+    }
+
+    // Envia o formulário em segundo plano (sem recarregar a página) pra que,
+    // se der erro (ex: nome de utilizador já em uso), a foto que a pessoa já
+    // tinha escolhido na galeria não suma — o input de arquivo nunca perde o
+    // que já tinha selecionado porque a página não é recarregada.
+    function ligarEnvioForm() {
+        const form = document.querySelector('.edit-card form');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!form.reportValidity()) return;
+            const botao = form.querySelector('.btn-save');
+            const textoOriginal = botao ? botao.textContent : '';
+            if (botao) { botao.disabled = true; botao.textContent = 'Salvando...'; }
+
+            fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+            }).then((resp) => {
+                if (resp.redirected) {
+                    focusNavegarSemPiscar(resp.url);
+                    return null;
+                }
+                return resp.text();
+            }).then((html) => {
+                if (html === null) return;
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const novoErro = doc.querySelector('.edit-erro');
+                const erroAtual = document.querySelector('.edit-erro');
+                if (novoErro && erroAtual) {
+                    erroAtual.replaceWith(novoErro);
+                } else if (novoErro) {
+                    form.insertAdjacentElement('beforebegin', novoErro);
+                } else if (erroAtual) {
+                    erroAtual.remove();
+                }
+                if (botao) { botao.disabled = false; botao.textContent = textoOriginal; }
+            }).catch(() => {
+                // Se a requisição em segundo plano falhar por algum motivo,
+                // cai pro envio normal do formulário como último recurso.
+                HTMLFormElement.prototype.submit.call(form);
+            });
+        });
+    }
+
+    function iniciarPagina() {
+        ligarSeletorDeFoto();
+        ligarEnvioForm();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', iniciarPagina);
+    } else {
+        iniciarPagina();
+    }
+})();
+</script>
+
+<div class="edit-card">
+
+    <div class="header-edit">
+        <a href="{{ url_for('perfil') }}" class="btn-icon-back"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1>Editar Perfil</h1>
+    </div>
+
+    {% if erro %}
+        <div class="edit-erro" style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" hx-boost="false">
+
+        <div class="section-title">Identidade Visual</div>
+
+        <div class="avatars-grid">
+            {% for i in [1,2,3] %}
+            <label class="avatar-option">
+                <input type="radio" name="foto_perfil" value="img/ex{{ i }}.png"
+                {{ 'checked' if user['foto_perfil'] == 'img/ex' ~ i ~ '.png' else '' }}>
+                <img src="{{ url_for('static', filename='img/ex' ~ i ~ '.png') }}" class="avatar-img">
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="input-group">
+            <label>Ou escolha qualquer foto da sua galeria</label>
+            <label for="fotoArquivoInput" class="file-picker">
+                <span class="file-picker-icon"><i class="fa-solid fa-image"></i></span>
+                <span class="file-picker-text" id="fotoArquivoTexto">Escolher foto da galeria<small>PNG, JPG, GIF ou WEBP</small></span>
+            </label>
+            <input type="file" name="foto_arquivo" id="fotoArquivoInput" class="file-picker-input" accept=".png,.jpg,.jpeg,.gif,.webp">
+            <div id="previewFotoWrap" class="file-preview" style="display:none;">
+                <img id="previewFoto">
+                <span class="hint-text" style="margin:0;">Essa foto vai substituir a de cima se você salvar.</span>
+            </div>
+        </div>
+
+        <div class="section-title">Sobre Você</div>
+
+        <div class="input-group">
+            <label>Nome Exibido (@)</label>
+            <input type="text" name="username" value="{{ user['username'] or '' }}" required>
+        </div>
+
+        <div class="input-group">
+            <label>Pronomes</label>
+            <input type="text" name="pronomes" value="{{ user['pronomes'] or '' }}" maxlength="50" placeholder="ex: ela/dela, ele/dele, elu/delu">
+        </div>
+
+        <div class="input-group">
+            <label>Bio</label>
+            <textarea name="bio" maxlength="280" rows="3" placeholder="Conte um pouco sobre você (aparecerá no seu perfil)...">{{ user['bio'] or '' }}</textarea>
+        </div>
+
+        <div class="section-title">Privacidade</div>
+
+        <div class="input-group input-group-inline">
+            <div>
+                <label>Nome Real</label>
+                <input type="text" name="nome" value="{{ user['nome'] }}" required style="margin-top: 8px;">
+            </div>
+            <label class="switch-inline">
+                <input type="checkbox" name="mostrar_nome_real" {{ 'checked' if user['mostrar_nome_real'] else '' }}>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <p class="hint-text">
+            <i class="fa-solid fa-circle-info"></i> Por padrão, só você vê seu nome real. Ative o interruptor pra mostrá-lo no seu perfil.
+        </p>
+
+        <button type="submit" class="btn-save">Salvar Alterações</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

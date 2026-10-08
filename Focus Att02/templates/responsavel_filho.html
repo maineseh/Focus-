@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ filho['username'] or filho['nome'] }} - Painel do Responsável</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsavel.css') }}">
+</head>
+<body class="r-body">
+    <nav class="r-nav">
+        <div class="r-nav-content">
+            <a href="{{ url_for('responsavel_painel') }}" class="r-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" alt="Focus">
+                <span>Focus<small>Painel do Responsável</small></span>
+            </a>
+            <a href="{{ url_for('responsavel_sair') }}" class="r-sair"><i class="fa-solid fa-power-off"></i> Sair</a>
+        </div>
+    </nav>
+
+    <div class="r-container">
+        <a href="{{ url_for('responsavel_painel') }}" class="r-back" aria-label="Voltar"><i class="fa-solid fa-arrow-left"></i></a>
+
+        <div class="r-header">
+            <img src="{{ url_for('static', filename=filho['foto_perfil'] or 'img/ex1.png') }}">
+            <div>
+                <h1>@{{ filho['username'] or filho['nome'] }}</h1>
+                <p>Desempenho, tempo no site e tarefas do dia</p>
+            </div>
+            <a href="{{ url_for('responsavel_conversas', id_usuario=filho['id']) }}" class="r-btn" style="margin-left:auto;"><i class="fa-solid fa-comments"></i> Ver conversas</a>
+        </div>
+
+        <div class="r-metrics">
+            <div class="r-metric">
+                <div class="r-metric-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div><h3>{{ "%.1f"|format(total_horas_estudo) }}<span>h</span></h3><p>Estudo nesta semana</p></div>
+            </div>
+            <div class="r-metric">
+                <div class="r-metric-icon"><i class="fa-solid fa-face-smile"></i></div>
+                <div><h3>{{ media_humor }}<span>/5</span></h3><p>Humor médio da semana</p></div>
+            </div>
+            <div class="r-metric">
+                <div class="r-metric-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div><h3>{{ "%.1f"|format(total_horas_site_geral) }}<span>h</span></h3><p>No site (total geral)</p></div>
+            </div>
+        </div>
+
+        <span class="r-eyebrow"><i class="fa-solid fa-chart-line"></i> Semana atual (Segunda a Domingo)</span>
+        <div class="r-card">
+            <div class="r-chart-tabs">
+                <button type="button" class="r-chart-tab active" data-tab="0" onclick="mudarAba(0)">Horas de estudo</button>
+                <button type="button" class="r-chart-tab" data-tab="1" onclick="mudarAba(1)">Tempo no site</button>
+            </div>
+            <div class="r-chart-wrapper"><canvas id="graficoResp"></canvas></div>
+        </div>
+
+        {% if alertas %}
+        <span class="r-eyebrow"><i class="fa-solid fa-shield-halved"></i> Alertas de segurança (Comunidades)</span>
+        <div class="r-card">
+            <div class="r-list">
+                {% for a in alertas %}
+                <div class="r-item">
+                    <div class="r-item-icon" style="{{ '' if a['revisado'] else 'background:#fee2e2;color:#dc2626;' }}"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="r-item-info">
+                        <strong>{{ a['texto'] }}</strong>
+                        <span>{{ a['contexto']|capitalize }}{% if a['autor_username'] %} · envolvendo @{{ a['autor_username'] }}{% endif %} · {{ a['criado_em'] }}</span>
+                    </div>
+                    {% if not a['revisado'] %}
+                    <form method="POST" action="{{ url_for('responsavel_revisar_alerta', id_usuario=filho['id'], alerta_id=a['id']) }}">
+                        <button type="submit" class="r-btn-revisar" title="Marcar como revisado"><i class="fa-solid fa-check"></i></button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if modulos_progresso %}
+        <span class="r-eyebrow"><i class="fa-solid fa-layer-group"></i> Progresso por módulo</span>
+        <div class="r-card">
+            <div class="r-list">
+                {% for m in modulos_progresso %}
+                <div class="r-item">
+                    <div class="r-item-icon"><i class="fa-solid fa-book"></i></div>
+                    <div class="r-item-info">
+                        <strong>{{ m['nome'] }}</strong>
+                        <span>{{ m['feitas'] }} de {{ m['total'] }} tarefas concluídas — {{ m['pct'] }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <span class="r-eyebrow"><i class="fa-solid fa-list-check"></i> Definir tarefa para hoje</span>
+        <div class="r-card">
+            <form method="POST" action="{{ url_for('responsavel_criar_tarefa', id_usuario=filho['id']) }}" class="r-form-row">
+                <div class="r-field">
+                    <label>Descrição da tarefa</label>
+                    <input type="text" name="descricao" placeholder="Ex.: Terminar exercícios de matemática" maxlength="255" required>
+                </div>
+                <button type="submit" class="r-btn" style="align-self: flex-start; margin-top: 24px;"><i class="fa-solid fa-plus"></i> Adicionar</button>
+            </form>
+        </div>
+
+        <span class="r-eyebrow"><i class="fa-solid fa-clipboard-list"></i> Tarefas definidas</span>
+        <div class="r-card">
+            {% if tarefas %}
+            <div class="r-tasks">
+                {% for t in tarefas %}
+                <div class="r-task {{ 'done' if t['concluida'] else '' }}">
+                    <div class="r-task-check">{% if t['concluida'] %}<i class="fa-solid fa-check"></i>{% endif %}</div>
+                    <div style="flex:1;">
+                        <div class="r-task-text">{{ t['descricao'] }}</div>
+                        <div class="r-task-meta">{{ t['data_alvo'] }}{% if t['concluida'] %} — concluída{% endif %}</div>
+                    </div>
+                    <form method="POST" action="{{ url_for('responsavel_excluir_tarefa', tarefa_id=t['id']) }}">
+                        <input type="hidden" name="id_usuario" value="{{ filho['id'] }}">
+                        <button type="submit" class="r-btn-ghost"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="r-hint" style="margin:0;">Nenhuma tarefa definida ainda.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const diasSemana = {{ dias_semana|tojson }};
+        const horasEstudo = {{ horas_estudo|tojson }};
+        const horasSite = {{ horas_site_semana|tojson }};
+
+        let chart = null;
+        function desenhar(aba) {
+            const ctx = document.getElementById('graficoResp').getContext('2d');
+            if (chart) chart.destroy();
+            const dados = aba === 0 ? horasEstudo : horasSite;
+            const cor = aba === 0 ? '#4c6fff' : '#22c55e';
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: diasSemana, datasets: [{ data: dados, backgroundColor: cor, borderRadius: 10, maxBarThickness: 44 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            // Um dia tem no máximo 24h — trava o eixo pra
+                            // não esticar o card mesmo em dias cheios.
+                            max: 24,
+                            ticks: {
+                                color: '#6b7280', font: { weight: '600' },
+                                stepSize: 4,
+                                callback: (v) => v + 'h'
+                            },
+                            grid: { color: '#eef0f7' }
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#6b7280', font: { weight: '600' } } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function mudarAba(i) {
+            document.querySelectorAll('.r-chart-tab').forEach((el, idx) => el.classList.toggle('active', idx === i));
+            desenhar(i);
+        }
+
+        desenhar(0);
+        window.mudarAba = mudarAba;
+    })();
+    </script>
+</body>
+</html>

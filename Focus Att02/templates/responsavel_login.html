@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Responsável - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsavel.css') }}">
+</head>
+<body class="r-body">
+    <div class="r-auth-wrap">
+        <div class="r-auth-logo">
+            <img src="{{ url_for('static', filename='img/cat.png') }}" alt="Focus">
+        </div>
+        <div class="r-auth-card">
+            {% if invalido %}
+            <h1>Este link não é válido</h1>
+            <p>O link pode ter sido revogado pelo filho, ou digitado errado. Peça um novo link a ele na área de Controle Parental do perfil dele.</p>
+            {% else %}
+            <h1>Painel do Responsável</h1>
+            <p>Entre com o e-mail e a senha que você criou ao acessar o link enviado pelo seu filho ou filha.</p>
+
+            {% if erro %}
+            <div class="r-error"><i class="fa-solid fa-circle-exclamation"></i> {{ erro }}</div>
+            {% endif %}
+
+            <form method="POST">
+                <div class="r-field">
+                    <label>E-mail</label>
+                    <input type="email" name="email" required autofocus>
+                </div>
+                <div class="r-field">
+                    <label>Senha</label>
+                    <input type="password" name="senha" required>
+                </div>
+                <button type="submit" class="r-btn full"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+            </form>
+            <p class="r-hint" style="text-align:center; margin-top: 18px;">Ainda não tem uma senha? Use o link de acesso que seu filho te enviou.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

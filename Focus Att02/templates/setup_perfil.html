@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="view-transition" content="same-origin">
+<title>Completar Perfil | Focus OS</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/setup_perfil.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/image-cropper.css') }}">
+<script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+<script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image-cropper.js') }}"></script>
+</head>
+
+<body>
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+<script>
+(function () {
+    const theme = localStorage.getItem('focus_theme') || 'default';
+    if (theme !== 'default') document.body.classList.add(theme + '-theme');
+})();
+</script>
+
+<div class="edit-card">
+
+    <div class="header-edit">
+        <span class="setup-step">Passo Final</span>
+        <h1>Completar Perfil</h1>
+    </div>
+    <p class="setup-hint">Configuração inicial do seu ambiente Focus</p>
+
+    {% if erro %}
+        <div style="color:#e57373; background:rgba(229,115,115,0.1); padding:15px; border-radius:15px; font-weight:700; margin-bottom:25px;">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ erro }}
+        </div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <div class="section-title">Escolha seu Avatar</div>
+
+        <div class="avatars-grid">
+            {% for i in [1, 2, 3] %}
+            <label class="avatar-option">
+                <input type="radio" name="foto_perfil" value="img/ex{{ i }}.png"
+                    {{ 'checked' if user['foto_perfil'] == 'img/ex' ~ i ~ '.png' else ('checked' if i == 1 and not user['foto_perfil'] else '') }}>
+                <img src="{{ url_for('static', filename='img/ex' ~ i ~ '.png') }}" class="avatar-img">
+            </label>
+            {% endfor %}
+        </div>
+
+
+        <div class="section-title">Nome de Usuário</div>
+
+        <div class="input-group">
+            <label>Como você quer ser identificado</label>
+            <input type="text" name="username" id="username" placeholder="ex: joao_estudos"
+                value="{{ user['username'] or '' }}" required>
+            <div class="username-preview" id="username-preview">&nbsp;</div>
+        </div>
+
+        <button class="btn-save" type="submit">
+            Iniciar Experiência Focus
+        </button>
+
+    </form>
+
+</div>
+
+<script>
+    const campoUsername = document.getElementById('username');
+    const preview = document.getElementById('username-preview');
+
+    function atualizarPreview() {
+        const valor = campoUsername.value.trim();
+        preview.textContent = valor ? '@' + valor : '\u00A0';
+    }
+
+    campoUsername.addEventListener('input', atualizarPreview);
+    atualizarPreview();
+</script>
+
+</body>
+</html>

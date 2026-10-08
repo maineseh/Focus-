@@ -1,0 +1,20 @@
+#cropperModal { display: none; position: fixed; inset: 0; z-index: 9999; }
+.cropper-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+}
+.cropper-card {
+    background: var(--card-bg, var(--bg)); border-radius: 20px; padding: 22px;
+    width: 92%; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+}
+.cropper-titulo { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 16px; color: var(--text); }
+.cropper-viewport {
+    width: 280px; height: 280px; border-radius: 50%; overflow: hidden;
+    background: repeating-conic-gradient(#00000014 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    cursor: grab; touch-action: none;
+}
+.cropper-viewport:active { cursor: grabbing; }
+.cropper-zoom-row { display: flex; align-items: center; gap: 10px; width: 100%; color: var(--text-soft); }
+.cropper-zoom-row input[type="range"] { flex: 1; }
+.cropper-acoes { display: flex; gap: 10px; justify-content: flex-end; width: 100%; }

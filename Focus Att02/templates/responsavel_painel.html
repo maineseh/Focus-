@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Responsável - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsavel.css') }}">
+</head>
+<body class="r-body">
+    <nav class="r-nav">
+        <div class="r-nav-content">
+            <a href="{{ url_for('responsavel_painel') }}" class="r-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" alt="Focus">
+                <span>Focus<small>Painel do Responsável</small></span>
+            </a>
+            <a href="{{ url_for('responsavel_sair') }}" class="r-sair"><i class="fa-solid fa-power-off"></i> Sair</a>
+        </div>
+    </nav>
+
+    <div class="r-container">
+        <div class="r-header">
+            <div class="r-header-icon"><i class="fa-solid fa-user-shield"></i></div>
+            <div>
+                <h1>Seus filhos no Focus</h1>
+                <p>Logado como {{ resp['email'] }}</p>
+            </div>
+        </div>
+
+        {% if erro %}
+        <div class="r-error"><i class="fa-solid fa-circle-exclamation"></i> {{ erro }}</div>
+        {% endif %}
+        {% if sucesso %}
+        <div class="r-success"><i class="fa-solid fa-circle-check"></i> {{ sucesso }}</div>
+        {% endif %}
+
+        <span class="r-eyebrow"><i class="fa-solid fa-user-plus"></i> Adicionar filho pelo e-mail</span>
+        <div class="r-card">
+            <form method="POST" action="{{ url_for('responsavel_solicitar_vinculo') }}" class="r-form-row">
+                <div class="r-field" style="margin-bottom: 0;">
+                    <label>E-mail da conta do filho no Focus</label>
+                    <input type="email" name="email" placeholder="filho@email.com" required>
+                </div>
+                <button type="submit" class="r-btn" style="align-self: flex-end;"><i class="fa-solid fa-paper-plane"></i> Enviar solicitação</button>
+            </form>
+            <p class="r-hint" style="margin-top: 14px; margin-bottom: 0;">Ele vai receber a solicitação em Controle Parental e precisa aprovar antes de você ver os dados.</p>
+        </div>
+
+        {% if pendentes %}
+        <span class="r-eyebrow"><i class="fa-solid fa-hourglass-half"></i> Aguardando aprovação</span>
+        <div class="r-card">
+            <div class="r-list">
+                {% for p in pendentes %}
+                <div class="r-item">
+                    <div class="r-item-icon"><i class="fa-solid fa-user-clock"></i></div>
+                    <div class="r-item-info">
+                        <strong>@{{ p['username'] or p['nome'] }}</strong>
+                        <span>Solicitação enviada em {{ p['criado_em'] }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <span class="r-eyebrow"><i class="fa-solid fa-child-reaching"></i> Filhos com acesso liberado</span>
+
+        {% if filhos %}
+        <div class="r-child-grid">
+            {% for f in filhos %}
+            <a href="{{ url_for('responsavel_filho', id_usuario=f['id']) }}" class="r-child-card">
+                <img src="{{ url_for('static', filename=f['foto_perfil'] or 'img/ex1.png') }}" class="r-child-avatar">
+                <h3>@{{ f['username'] or f['nome'] }}</h3>
+                <p>Ver desempenho e tarefas</p>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="r-card r-empty">
+            <i class="fa-solid fa-circle-info"></i>
+            <h2>Nenhum filho vinculado ainda</h2>
+            <p>Peça pro seu filho gerar um link em Controle Parental, ou adicione o e-mail dele acima.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,186 @@
+/* ============================================================
+   PAINEL DO RESPONSÁVEL — layout único e fixo (sem os 13 temas do
+   app do filho: aqui é sempre a mesma cara, sóbria e consistente).
+   ============================================================ */
+
+:root {
+    --r-bg: #f3f5fb;
+    --r-card: #ffffff;
+    --r-border: #e3e7f1;
+    --r-text: #1f2430;
+    --r-text-soft: #6b7280;
+    --r-primary: #4c6fff;
+    --r-primary-dark: #3955d1;
+    --r-accent: #22c55e;
+    --r-danger: #ef4444;
+    --r-danger-bg: #fef2f2;
+    --r-radius: 20px;
+}
+
+* { box-sizing: border-box; }
+
+body.r-body {
+    margin: 0; min-height: 100vh; background: var(--r-bg); color: var(--r-text);
+    font-family: 'Nunito', sans-serif; padding-top: 76px;
+    /* "Padrão A" — tamanho fixo e maior, pra ficar mais fácil de enxergar.
+       Por enquanto não tem opção de trocar (só o app do filho tem os
+       3 níveis de fonte lá em Acessibilidade). */
+    zoom: 1.2;
+}
+
+.r-nav {
+    background: var(--r-card); height: 70px; display: flex; align-items: center;
+    position: fixed; top: 0; left: 0; width: 100%; z-index: 900;
+    border-bottom: 1px solid var(--r-border); box-shadow: 0 2px 12px rgba(20,25,50,0.04);
+}
+
+.r-nav-content {
+    max-width: 900px; margin: 0 auto; width: 100%; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+
+.r-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--r-text); }
+.r-brand img { width: 34px; height: 34px; border-radius: 10px; }
+.r-brand span { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 18px; }
+.r-brand small { display: block; font-size: 10px; font-weight: 800; color: var(--r-primary); text-transform: uppercase; letter-spacing: .5px; }
+
+.r-sair {
+    color: var(--r-text-soft); text-decoration: none; font-weight: 800; font-size: 13px;
+    padding: 10px 18px; border-radius: 30px; transition: 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.r-sair:hover { background: var(--r-danger-bg); color: var(--r-danger); }
+
+.r-container { max-width: 900px; margin: 0 auto; padding: 28px 24px 60px; }
+
+.r-back {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%; background: var(--r-card);
+    border: 1px solid var(--r-border); color: var(--r-text-soft); text-decoration: none;
+    margin-bottom: 18px; transition: 0.2s;
+}
+.r-back:hover { background: var(--r-primary); color: white; border-color: var(--r-primary); }
+
+.r-header { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+.r-header-icon, .r-header img {
+    width: 64px; height: 64px; border-radius: 18px; object-fit: cover;
+    background: var(--r-primary); color: white; display: flex; align-items: center;
+    justify-content: center; font-size: 26px; flex-shrink: 0;
+}
+.r-header h1 { font-family: 'Baloo 2', sans-serif; font-size: 22px; margin: 0 0 4px; }
+.r-header p { margin: 0; color: var(--r-text-soft); font-size: 14px; font-weight: 600; }
+
+.r-eyebrow {
+    display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 12px;
+    text-transform: uppercase; letter-spacing: .6px; color: var(--r-text-soft);
+    margin: 30px 0 12px;
+}
+.r-eyebrow i { color: var(--r-primary); }
+
+.r-card {
+    background: var(--r-card); border: 1px solid var(--r-border); border-radius: var(--r-radius);
+    padding: 26px; margin-bottom: 10px; box-shadow: 0 4px 18px rgba(20,25,50,0.04);
+}
+
+.r-empty { text-align: center; padding: 50px 20px; color: var(--r-text-soft); }
+.r-empty i { font-size: 36px; color: var(--r-primary); margin-bottom: 14px; display: block; }
+.r-empty h2 { font-family: 'Baloo 2', sans-serif; font-size: 19px; color: var(--r-text); margin: 0 0 8px; }
+.r-empty p { margin: 0; font-size: 14px; line-height: 1.5; }
+
+/* Formulários (senha, e-mail, tarefas) */
+.r-form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.r-field { flex: 1; min-width: 200px; margin-bottom: 14px; }
+.r-field label { display: block; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--r-text-soft); margin-bottom: 8px; }
+.r-field input {
+    width: 100%; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--r-border);
+    background: var(--r-bg); color: var(--r-text); font-size: 15px; font-weight: 600;
+    outline: none; transition: 0.2s; font-family: inherit;
+}
+.r-field input:focus { border-color: var(--r-primary); background: white; }
+
+.r-btn {
+    background: var(--r-primary); color: white; border: none; border-radius: 14px;
+    padding: 14px 24px; font-weight: 800; font-size: 14px; cursor: pointer;
+    transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+}
+.r-btn:hover { background: var(--r-primary-dark); }
+.r-btn.full { width: 100%; justify-content: center; }
+
+.r-btn-ghost {
+    background: transparent; color: var(--r-danger); border: 2px solid var(--r-border);
+    border-radius: 12px; padding: 10px 16px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s;
+}
+.r-btn-ghost:hover { background: var(--r-danger); color: white; border-color: var(--r-danger); }
+
+.r-error {
+    display: flex; align-items: center; gap: 10px; background: var(--r-danger-bg); color: var(--r-danger);
+    border-radius: 14px; padding: 14px 18px; font-weight: 700; font-size: 13px; margin-bottom: 18px;
+}
+
+.r-success {
+    display: flex; align-items: center; gap: 10px; background: #ecfdf5; color: #15803d;
+    border-radius: 14px; padding: 14px 18px; font-weight: 700; font-size: 13px; margin-bottom: 18px;
+}
+
+.r-hint { font-size: 12px; color: var(--r-text-soft); font-weight: 600; margin-top: -6px; margin-bottom: 16px; }
+
+/* Auth card centralizado (login / criar senha) */
+.r-auth-wrap { max-width: 420px; margin: 60px auto 0; padding: 0 20px; }
+.r-auth-logo { text-align: center; margin-bottom: 22px; }
+.r-auth-logo img { width: 52px; height: 52px; border-radius: 16px; }
+.r-auth-card { background: var(--r-card); border: 1px solid var(--r-border); border-radius: 24px; padding: 34px; box-shadow: 0 8px 30px rgba(20,25,50,0.06); }
+.r-auth-card h1 { font-family: 'Baloo 2', sans-serif; font-size: 20px; margin: 0 0 6px; text-align: center; }
+.r-auth-card > p { text-align: center; color: var(--r-text-soft); font-size: 13px; font-weight: 600; margin: 0 0 22px; }
+.r-auth-email { text-align: center; font-weight: 800; color: var(--r-primary); font-size: 14px; margin-bottom: 18px; word-break: break-all; }
+
+/* Lista de responsáveis / filhos / tarefas */
+.r-list { display: flex; flex-direction: column; gap: 12px; }
+.r-item { display: flex; align-items: center; gap: 14px; background: var(--r-bg); border: 1px solid var(--r-border); border-radius: 16px; padding: 14px 18px; }
+.r-item-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--r-primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.r-item-info { flex: 1; min-width: 0; }
+.r-item-info strong { display: block; font-size: 14px; word-break: break-word; }
+.r-item-info span { font-size: 12px; color: var(--r-text-soft); font-weight: 700; }
+.r-btn-revisar { flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--r-primary); color: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.r-btn-revisar:hover { opacity: 0.85; }
+
+.r-child-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+.r-child-card {
+    background: var(--r-card); border: 1px solid var(--r-border); border-radius: 20px;
+    padding: 24px; text-align: center; text-decoration: none; color: inherit; transition: 0.2s;
+    box-shadow: 0 4px 18px rgba(20,25,50,0.04);
+}
+.r-child-card:hover { transform: translateY(-4px); border-color: var(--r-primary); box-shadow: 0 8px 24px rgba(76,111,255,0.15); }
+.r-child-avatar { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid var(--r-primary); margin: 0 auto 14px; }
+.r-child-card h3 { font-size: 16px; margin: 0; }
+.r-child-card p { font-size: 12px; color: var(--r-text-soft); font-weight: 700; margin: 4px 0 0; }
+
+/* Métricas */
+.r-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 6px; }
+.r-metric { background: var(--r-card); border: 1px solid var(--r-border); border-radius: 18px; padding: 18px; display: flex; align-items: center; gap: 12px; }
+.r-metric-icon { width: 42px; height: 42px; border-radius: 12px; background: rgba(76,111,255,0.12); color: var(--r-primary); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.r-metric h3 { margin: 0; font-size: 20px; font-family: 'Baloo 2', sans-serif; }
+.r-metric h3 span { font-size: 12px; color: var(--r-text-soft); margin-left: 2px; }
+.r-metric p { margin: 2px 0 0; font-size: 11px; color: var(--r-text-soft); font-weight: 700; }
+
+/* Gráfico */
+.r-chart-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.r-chart-tab {
+    background: var(--r-bg); border: 1px solid var(--r-border); border-radius: 30px; padding: 8px 16px;
+    font-weight: 800; font-size: 12px; color: var(--r-text-soft); cursor: pointer; transition: 0.2s;
+}
+.r-chart-tab.active { background: var(--r-primary); border-color: var(--r-primary); color: white; }
+.r-chart-wrapper { height: 220px; }
+
+/* Tarefas */
+.r-tasks { display: flex; flex-direction: column; gap: 10px; }
+.r-task { display: flex; align-items: center; gap: 14px; background: var(--r-bg); border: 1px solid var(--r-border); border-radius: 16px; padding: 14px 18px; }
+.r-task-check { width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.r-task.done .r-task-check { background: var(--r-accent); color: white; }
+.r-task:not(.done) .r-task-check { border: 2px solid var(--r-border); }
+.r-task-text { flex: 1; font-weight: 700; font-size: 14px; }
+.r-task.done .r-task-text { text-decoration: line-through; opacity: 0.55; }
+.r-task-meta { font-size: 11px; color: var(--r-text-soft); font-weight: 700; }
+
+@media (max-width: 640px) {
+    .r-form-row { flex-direction: column; }
+    .r-item { flex-wrap: wrap; }
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Controle Parental - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/controle_parental.css') }}">
+
+    <div class="settings-hub">
+        <a href="{{ origem }}" class="btn-close-config"><i class="fa-solid fa-xmark"></i></a>
+
+        <header class="hud-header">
+            <img src="{{ url_for('static', filename=foto_perfil) }}" class="header-avatar">
+            <div>
+                <h1>Controle Parental</h1>
+                <p>Dê acesso ao seu responsável pra ele acompanhar seu progresso no Focus.</p>
+            </div>
+        </header>
+
+        {% if erro %}
+        <div class="cp-alert"><i class="fa-solid fa-circle-exclamation"></i> {{ erro }}</div>
+        {% endif %}
+
+        {% if solicitacoes %}
+        <span class="section-eyebrow"><i class="fa-solid fa-bell"></i> Solicitações de vínculo</span>
+        <div class="cp-card">
+            <div class="cp-list">
+                {% for s in solicitacoes %}
+                <div class="cp-item">
+                    <div class="cp-item-icon"><i class="fa-solid fa-user-clock"></i></div>
+                    <div class="cp-item-info">
+                        <strong>{{ s['email'] }}</strong>
+                        <span>Pediu pra acompanhar sua conta em {{ s['criado_em'] }}</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <form method="POST" action="{{ url_for('controle_parental_aprovar', vinculo_id=s['id']) }}">
+                            <button type="submit" class="btn-mini primary"><i class="fa-solid fa-check"></i> Aprovar</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('controle_parental_recusar', vinculo_id=s['id']) }}">
+                            <button type="submit" class="btn-danger-mini"><i class="fa-solid fa-xmark"></i> Recusar</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if link_gerado %}
+        <div class="cp-link-box">
+            <p><i class="fa-solid fa-circle-check"></i> Link gerado! Envie pro seu responsável — é só ele abrir esse link (no celular ou no computador) pra acessar o painel dele.</p>
+            <div class="cp-link-field">
+                <input type="text" id="cpLinkInput" value="{{ link_gerado }}" readonly>
+                <button type="button" class="btn-mini" onclick="copiarLink()"><i class="fa-solid fa-copy"></i></button>
+            </div>
+            <div class="cp-link-actions">
+                <a class="btn-mini" id="cpWhatsapp" href="#" target="_blank"><i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <span class="section-eyebrow"><i class="fa-solid fa-user-plus"></i> Adicionar responsável</span>
+        <div class="cp-card">
+            <form method="POST" action="{{ url_for('controle_parental_adicionar') }}" class="cp-form-row">
+                <div class="input-group">
+                    <label>E-mail do responsável</label>
+                    <input type="email" name="email" placeholder="responsavel@email.com" required>
+                </div>
+                <button type="submit" class="btn-primary" style="align-self: flex-end;"><i class="fa-solid fa-link"></i> Gerar link de acesso</button>
+            </form>
+        </div>
+
+        <span class="section-eyebrow"><i class="fa-solid fa-people-roof"></i> Responsáveis com acesso</span>
+        <div class="cp-card">
+            {% if vinculos %}
+            <div class="cp-list">
+                {% for v in vinculos %}
+                <div class="cp-item">
+                    <div class="cp-item-icon"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="cp-item-info">
+                        <strong>{{ v['email'] }}</strong>
+                        <span>Acesso concedido em {{ v['criado_em'] }}</span>
+                    </div>
+                    <div class="cp-item-actions" style="display:flex; gap:8px;">
+                        <form method="POST" action="{{ url_for('controle_parental_gerar_link', vinculo_id=v['id']) }}">
+                            <button type="submit" class="btn-mini" title="Gerar novo link de acesso pra esse responsável"><i class="fa-solid fa-link"></i> Gerar novo link</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('controle_parental_revogar', vinculo_id=v['id']) }}" onsubmit="return cpConfirmarRevogar(this);">
+                            <input type="hidden" name="senha" class="cp-senha-revogar">
+                            <button type="submit" class="btn-danger-mini"><i class="fa-solid fa-ban"></i> Revogar</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="cp-empty">Nenhum responsável com acesso ainda. Adicione um e-mail acima pra gerar o link.</p>
+            {% endif %}
+        </div>
+
+        <div class="guia-compacto show" id="guia-cp-fim">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Como funciona:</b> não há e-mail automático ainda — copie o link gerado e envie você mesmo pro seu responsável (WhatsApp, por exemplo). Na primeira vez que ele abrir o link, ele cria uma senha própria de acesso — depois disso, qualquer tarefa que ele definir aparece na sua aba Estudos. Seu responsável também pode te adicionar direto pelo painel dele usando seu e-mail — nesse caso, a solicitação aparece aqui pra você aprovar ou recusar.</span>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const theme = localStorage.getItem('focus_theme') || 'default';
+        if (theme !== 'default') document.body.classList.add(theme + '-theme');
+
+        function copiarLink() {
+            const input = document.getElementById('cpLinkInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
+        }
+
+        const wa = document.getElementById('cpWhatsapp');
+        if (wa) {
+            const linkInput = document.getElementById('cpLinkInput');
+            const texto = encodeURIComponent('Oi! Pra acompanhar meu desempenho no Focus, é só abrir esse link: ' + linkInput.value);
+            wa.href = 'https://wa.me/?text=' + texto;
+        }
+
+        document.querySelectorAll('.guia-compacto').forEach(g => {
+            if (!localStorage.getItem('focus_guia_fechado_' + g.id)) g.classList.add('show');
+        });
+
+        function cpConfirmarRevogar(form) {
+            const senha = prompt('Pra revogar o acesso desse responsável, digite sua senha do Focus:');
+            if (!senha) return false;
+            form.querySelector('.cp-senha-revogar').value = senha;
+            return true;
+        }
+
+        window.copiarLink = copiarLink;
+        window.cpConfirmarRevogar = cpConfirmarRevogar;
+    })();
+    </script>
+</body>
+</html>

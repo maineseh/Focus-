@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>Comunidades - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <i id="focus-onde-parei" data-secao="comunidades" data-url="" hidden></i>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/comunidades.css') }}">
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('comunidades') }}" class="active"><i class="fa-solid fa-users"></i> Comunidades</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('controle_parental') }}" class="dropdown-item"><i class="fa-solid fa-user-shield"></i> Controle Parental</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;" hx-boost="false"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <img src="{{ url_for('static', filename=foto_perfil) }}" class="header-avatar">
+            <div>
+                <h1>Comunidades</h1>
+                <p>Seus amigos, seus grupos — com segurança em primeiro lugar.</p>
+            </div>
+        </header>
+
+        {% if erro %}<div class="com-erro"><i class="fa-solid fa-triangle-exclamation"></i> {{ erro }}</div>{% endif %}
+
+        <div class="com-card">
+            <span class="section-eyebrow"><i class="fa-solid fa-user-plus"></i> Adicionar amigo</span>
+            <form method="POST" action="{{ url_for('comunidades_solicitar') }}" class="com-search-form" hx-boost="false" id="comBuscaForm" autocomplete="off">
+                <div style="position:relative; flex:1;">
+                    <input type="text" name="username" id="comBuscaInput" placeholder="@nome de usuário" maxlength="50" required>
+                    <div id="comBuscaResultados" class="com-busca-resultados" style="display:none;"></div>
+                </div>
+                <button type="submit" class="com-btn"><i class="fa-solid fa-paper-plane"></i> Pedir</button>
+            </form>
+        </div>
+
+        <div class="com-tabs">
+            <button class="com-tab active" data-tab="amigos" onclick="comMudarAba('amigos')">
+                <i class="fa-solid fa-user-group"></i> Amigos
+            </button>
+            <button class="com-tab" data-tab="grupos" onclick="comMudarAba('grupos')">
+                <i class="fa-solid fa-people-group"></i> Grupos
+            </button>
+            <button class="com-tab" data-tab="pedidos" onclick="comMudarAba('pedidos')">
+                <i class="fa-solid fa-bell"></i> Pedidos
+                {% if recebidas %}<span class="badge">{{ recebidas|length }}</span>{% endif %}
+            </button>
+            <button class="com-tab" data-tab="bloqueados" onclick="comMudarAba('bloqueados')">
+                <i class="fa-solid fa-ban"></i> Bloqueados
+            </button>
+        </div>
+
+        <div class="com-card com-painel" data-painel="amigos">
+            {% if amigos %}
+            <div class="com-lista">
+                {% for a in amigos %}
+                <div class="com-pessoa">
+                    <a href="{{ url_for('comunidades_perfil', usuario_id=a['id'], origem=request.path) }}" class="com-avatar-wrap">
+                        <img src="{{ url_for('static', filename=a['foto_perfil'] or 'img/ex1.png') }}" class="com-avatar">
+                        <span class="com-dot status-{{ a['status_exibicao'] }}"></span>
+                    </a>
+                    <div class="com-pessoa-info">
+                        <strong>@{{ a['username'] }}</strong>
+                        <span>{{ {'online': 'Online', 'ausente': 'Ausente', 'ocupado': 'Ocupado', 'offline': 'Offline'}[a['status_exibicao']] }}</span>
+                    </div>
+                    <div class="com-acoes">
+                        <a href="{{ url_for('comunidades_dm', amigo_id=a['id'], origem=request.path) }}" title="Conversar"><i class="fa-solid fa-message"></i></a>
+                        <a href="{{ url_for('comunidades_perfil', usuario_id=a['id'], origem=request.path) }}" title="Ver perfil"><i class="fa-solid fa-circle-info"></i></a>
+                        <form method="POST" action="{{ url_for('comunidades_remover_amigo', amigo_id=a['id']) }}" hx-boost="false" onsubmit="return confirm('Remover @' + '{{ a['username'] }}' + ' da sua lista de amigos?');">
+                            <button type="submit" class="remover" title="Remover amigo"><i class="fa-solid fa-user-minus"></i></button>
+                        </form>
+                        <form method="POST" action="{{ url_for('comunidades_bloquear', amigo_id=a['id']) }}" hx-boost="false" onsubmit="return confirm('Bloquear @' + '{{ a['username'] }}' + '? Vocês deixarão de ser amigos.');">
+                            <button type="submit" class="bloquear" title="Bloquear"><i class="fa-solid fa-ban"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="com-vazio">Você ainda não tem amigos por aqui. Peça pra alguém usando o nome de usuário ali em cima!</p>
+            {% endif %}
+        </div>
+
+        <div class="com-card com-painel" data-painel="grupos" style="display:none;">
+            <div class="page-actions" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span class="section-eyebrow" style="margin:0;"><i class="fa-solid fa-people-group"></i> Seus grupos</span>
+                <button class="com-btn small" onclick="document.getElementById('modalNovoGrupo').style.display='flex'"><i class="fa-solid fa-plus"></i> Criar grupo</button>
+            </div>
+            {% if grupos %}
+                {% for g in grupos %}
+                <a href="{{ url_for('comunidades_grupo', grupo_id=g['id']) }}" class="com-grupo-card">
+                    <div class="com-grupo-icon">
+                        {% if g['foto'] %}<img src="{{ url_for('static', filename=g['foto']) }}">{% else %}<i class="fa-solid fa-people-group"></i>{% endif %}
+                    </div>
+                    <div>
+                        <strong>{{ g['nome'] }}</strong>
+                        <span>{{ g['total_membros'] }} membro{{ 's' if g['total_membros'] != 1 else '' }}{% if g['papel'] == 'criador' %} · você é o criador{% elif g['papel'] == 'admin' %} · você é admin{% endif %}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+            <p class="com-vazio">Você ainda não participa de nenhum grupo.</p>
+            {% endif %}
+        </div>
+
+        <div class="com-card com-painel" data-painel="pedidos" style="display:none;">
+            <span class="section-eyebrow"><i class="fa-solid fa-inbox"></i> Recebidos</span>
+            {% if recebidas %}
+            <div class="com-lista">
+                {% for r in recebidas %}
+                <div class="com-pessoa">
+                    <div class="com-avatar-wrap"><img src="{{ url_for('static', filename=r['foto_perfil'] or 'img/ex1.png') }}" class="com-avatar"></div>
+                    <div class="com-pessoa-info"><strong>@{{ r['username'] }}</strong><span>Quer ser seu amigo</span></div>
+                    <div class="com-acoes">
+                        <form method="POST" action="{{ url_for('comunidades_aceitar', amizade_id=r['amizade_id']) }}" hx-boost="false">
+                            <button type="submit" class="aceitar" title="Aceitar"><i class="fa-solid fa-check"></i></button>
+                        </form>
+                        <form method="POST" action="{{ url_for('comunidades_recusar', amizade_id=r['amizade_id']) }}" hx-boost="false">
+                            <button type="submit" class="recusar" title="Recusar"><i class="fa-solid fa-xmark"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="com-vazio">Nenhum pedido de amizade recebido.</p>
+            {% endif %}
+
+            <span class="section-eyebrow" style="margin-top:24px;"><i class="fa-solid fa-paper-plane"></i> Enviados</span>
+            {% if enviadas %}
+            <div class="com-lista">
+                {% for e in enviadas %}
+                <div class="com-pessoa">
+                    <div class="com-avatar-wrap"><img src="{{ url_for('static', filename=e['foto_perfil'] or 'img/ex1.png') }}" class="com-avatar"></div>
+                    <div class="com-pessoa-info"><strong>@{{ e['username'] }}</strong><span>Aguardando resposta</span></div>
+                    <div class="com-acoes">
+                        <form method="POST" action="{{ url_for('comunidades_recusar', amizade_id=e['amizade_id']) }}" hx-boost="false">
+                            <button type="submit" class="remover" title="Cancelar pedido"><i class="fa-solid fa-xmark"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="com-vazio">Nenhum pedido pendente enviado.</p>
+            {% endif %}
+        </div>
+
+        <div class="com-card com-painel" data-painel="bloqueados" style="display:none;">
+            {% if bloqueados %}
+            <div class="com-lista">
+                {% for b in bloqueados %}
+                <div class="com-pessoa">
+                    <div class="com-avatar-wrap"><img src="{{ url_for('static', filename=b['foto_perfil'] or 'img/ex1.png') }}" class="com-avatar"></div>
+                    <div class="com-pessoa-info"><strong>@{{ b['username'] }}</strong><span>Bloqueado</span></div>
+                    <div class="com-acoes">
+                        <form method="POST" action="{{ url_for('comunidades_desbloquear', amigo_id=b['id']) }}" hx-boost="false">
+                            <button type="submit" title="Desbloquear"><i class="fa-solid fa-lock-open"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="com-vazio">Você não bloqueou ninguém.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="modalNovoGrupo" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9500; align-items:center; justify-content:center;">
+        <div class="com-card" style="max-width:420px; width:90%;">
+            <span class="section-eyebrow" style="margin-top:0;"><i class="fa-solid fa-people-group"></i> Novo grupo</span>
+            <form method="POST" action="{{ url_for('comunidades_criar_grupo') }}" hx-boost="false">
+                <div class="com-field">
+                    <label>Nome do grupo</label>
+                    <input type="text" name="nome" maxlength="100" required>
+                </div>
+                <div class="com-field">
+                    <label>Descrição (opcional)</label>
+                    <textarea name="descricao" maxlength="280"></textarea>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type="button" class="com-btn ghost" onclick="document.getElementById('modalNovoGrupo').style.display='none'">Cancelar</button>
+                    <button type="submit" class="com-btn"><i class="fa-solid fa-check"></i> Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        function comMudarAba(aba) {
+            document.querySelectorAll('.com-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === aba));
+            document.querySelectorAll('.com-painel').forEach(p => p.style.display = (p.dataset.painel === aba) ? 'block' : 'none');
+        }
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show'); };
+        window.comMudarAba = comMudarAba;
+        window.toggleDropdown = toggleDropdown;
+
+        function initComunidades() {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if (theme !== 'default') document.body.classList.add(theme + '-theme');
+
+            const input = document.getElementById('comBuscaInput');
+            const caixa = document.getElementById('comBuscaResultados');
+            if (!input || !caixa) return;
+
+            let timer = null;
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                const termo = input.value.trim();
+                if (termo.length < 2) { caixa.style.display = 'none'; caixa.innerHTML = ''; return; }
+                timer = setTimeout(() => buscar(termo), 250);
+            });
+
+            async function buscar(termo) {
+                try {
+                    const resp = await fetch(`/comunidades/buscar?q=${encodeURIComponent(termo)}`);
+                    const dados = await resp.json();
+                    renderizar(dados.resultados || []);
+                } catch (e) { /* busca falhou, silenciosamente ignora */ }
+            }
+
+            function escapeHtml(s) {
+                const d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+
+            function renderizar(resultados) {
+                if (!resultados.length) { caixa.style.display = 'none'; caixa.innerHTML = ''; return; }
+                caixa.innerHTML = resultados.map(r => `
+                    <button type="button" class="com-busca-item" data-username="${escapeHtml(r.username)}" ${r.ja_amigo ? 'disabled' : ''}>
+                        <img src="/static/${escapeHtml(r.foto)}" class="com-avatar">
+                        <span>@${escapeHtml(r.username)}</span>
+                        ${r.ja_amigo ? '<span class="com-busca-tag">já é seu amigo</span>' : ''}
+                    </button>
+                `).join('');
+                caixa.style.display = 'block';
+                caixa.querySelectorAll('.com-busca-item:not([disabled])').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        input.value = btn.dataset.username;
+                        caixa.style.display = 'none';
+                        input.closest('form').requestSubmit();
+                    });
+                });
+            }
+
+            // Atribuição direta (não addEventListener) pra não acumular um
+            // listener novo em document a cada vez que a página é
+            // revisitada via navegação boosted do htmx (document sobrevive
+            // à troca do <body>).
+            document.onclick = (e) => {
+                if (!e.target.closest('#comBuscaForm')) { caixa.style.display = 'none'; }
+            };
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initComunidades);
+        } else {
+            initComunidades();
+        }
+    })();
+    </script>
+</body>
+</html>

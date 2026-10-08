@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>{{ modulo['nome'] }} - Focus OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/accessibility.css') }}">
+    <script src="{{ url_for('static', filename='js/accessibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/soundtrack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/atividade.js') }}" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/spa.js') }}" defer></script>
+</head>
+<body hx-boost="true">
+    <script>(function(){var t=localStorage.getItem('focus_theme');if(t&&t!=='default')document.body.classList.add(t+'-theme');})();</script>
+    <i id="focus-onde-parei" data-secao="estudos" data-url="{{ request.full_path.rstrip('?') }}" hidden></i>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/meus_estudos.css') }}">
+
+    <nav class="navbar-main">
+        <div class="nav-content">
+           <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/cat.png') }}" class="nav-logo" alt="Logo Focus">
+                <span class="brand-text">Focus</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-house"></i> Início</a></li>
+                <li><a href="{{ url_for('meus_estudos') }}" class="active"><i class="fa-solid fa-graduation-cap"></i> Estudos</a></li>
+                <li><a href="{{ url_for('comunidades') }}"><i class="fa-solid fa-users"></i> Comunidades</a></li>
+                <li><a href="{{ url_for('meu_desempenho') }}"><i class="fa-solid fa-chart-line"></i> Desempenho</a></li>
+                <li><a href="{{ url_for('agenda') }}"><i class="fa-solid fa-bullseye"></i> Metas</a></li>
+            </ul>
+            <div class="profile-container">
+                <div class="profile-trigger" onclick="toggleDropdown()">
+                    <span>@{{ username_exibir }}</span>
+                    <div class="nav-avatar-wrap">
+                        <img src="{{ url_for('static', filename=foto_perfil) }}" class="profile-img">
+                        <span class="nav-status-dot status-{{ status }}"></span>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="{{ url_for('perfil') }}" class="dropdown-item"><i class="fa-solid fa-user"></i> Perfil</a>
+                    <a href="{{ url_for('configuracoes') }}" class="dropdown-item"><i class="fa-solid fa-gear"></i> Configurações</a>
+                    <a href="{{ url_for('controle_parental') }}" class="dropdown-item"><i class="fa-solid fa-user-shield"></i> Controle Parental</a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item" style="color: #ff4d4d;" hx-boost="false"><i class="fa-solid fa-power-off"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="hud-header">
+            <a href="{{ url_for('meus_estudos') }}" class="btn-icon-back" style="position: static; font-size: 22px;"><i class="fa-solid fa-arrow-left"></i></a>
+            <div>
+                <h1>{{ modulo['nome'] }}</h1>
+                <p>{{ disciplinas|length }} disciplina{{ 's' if disciplinas|length != 1 else '' }} neste módulo.</p>
+            </div>
+        </header>
+
+        <div class="page-actions">
+            <span class="section-eyebrow"><i class="fa-solid fa-book"></i> Disciplinas</span>
+            <button class="btn-primary" onclick="abrirModalDisciplina()"><i class="fa-solid fa-plus"></i> Nova Disciplina</button>
+        </div>
+
+        {% if disciplinas %}
+        <div class="disciplina-grid" id="gridDisciplinas">
+            {% for d in disciplinas %}
+            <div class="disciplina-card" draggable="true" data-id="{{ d['id'] }}">
+                <div class="disciplina-top">
+                    <span class="disciplina-nome">{{ d['nome'] }}</span>
+                    <button type="button" class="btn-icon-editar btn-editar-disciplina" data-id="{{ d['id'] }}" data-nome="{{ d['nome'] }}" data-dificuldade="{{ d['dificuldade'] }}" title="Editar disciplina">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                </div>
+                <div class="disciplina-dificuldade nivel-{{ d['dificuldade'] }}">
+                    {% for i in range(1,6) %}
+                    <i class="fa-solid fa-star diff-star {{ 'on' if i <= d['dificuldade'] else '' }}"></i>
+                    {% endfor %}
+                </div>
+
+                {% set total = d['total_tarefas'] or 0 %}
+                {% set feitas = d['tarefas_feitas'] or 0 %}
+                <div>
+                    <div class="disciplina-progress-label">
+                        <span>{{ feitas }}/{{ total }} tarefa{{ 's' if total != 1 else '' }}</span>
+                        <span>{{ (feitas / total * 100) | round | int if total > 0 else 0 }}%</span>
+                    </div>
+                    <div class="disciplina-progress-bar">
+                        <div class="disciplina-progress-fill" style="width: {{ (feitas / total * 100) if total > 0 else 0 }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="disciplina-actions">
+                    <a href="{{ url_for('ver_disciplina', disciplina_id=d['id']) }}" class="btn-mini primary">Estudar</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="dica-arrastar"><i class="fa-solid fa-arrows-up-down-left-right"></i> Arraste os cards pra reordenar suas disciplinas.</p>
+        {% else %}
+        <div class="empty-state">
+            <i class="fa-solid fa-book"></i>
+            <p>Nenhuma disciplina neste módulo ainda. Adicione a primeira!</p>
+        </div>
+        {% endif %}
+
+        <div class="guia-compacto" id="guia-modulo">
+            <i class="fa-solid fa-circle-info guia-icone"></i>
+            <span><b>Dica:</b> cada disciplina tem checklist, cronômetro e anotações próprios. O progresso reflete as tarefas concluídas.</span>
+            <button class="guia-fechar" onclick="fecharGuia('guia-modulo')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalDisciplina">
+        <div class="modal-box">
+            <h3>Nova Disciplina</h3>
+            <form method="POST" action="{{ url_for('criar_disciplina', modulo_id=modulo['id']) }}">
+                <label>Nome da disciplina</label>
+                <input type="text" name="nome" class="input-field" placeholder="ex: Biologia, História..." required maxlength="100">
+
+                <label>Dificuldade</label>
+                <div class="dificuldade-picker nivel-1" id="dificuldadePicker">
+                    <input type="hidden" name="dificuldade" id="dificuldadeInput" value="1">
+                    <button type="button" data-v="1" class="on"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="2"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="3"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="4"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="5"><i class="fa-solid fa-star"></i></button>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="fecharModalDisciplina()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalEditarDisciplina">
+        <div class="modal-box">
+            <h3>Editar Disciplina</h3>
+            <form method="POST" id="formEditarDisciplina">
+                <label>Nome da disciplina</label>
+                <input type="text" name="nome" id="inputEditarDisciplinaNome" class="input-field" required maxlength="100">
+
+                <label>Dificuldade</label>
+                <div class="dificuldade-picker nivel-1" id="dificuldadePickerEditar">
+                    <input type="hidden" name="dificuldade" id="dificuldadeInputEditar" value="1">
+                    <button type="button" data-v="1"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="2"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="3"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="4"><i class="fa-solid fa-star"></i></button>
+                    <button type="button" data-v="5"><i class="fa-solid fa-star"></i></button>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="fecharEdicaoDisciplina()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        window.onclick = (e) => { if (!e.target.closest('.profile-container')) document.getElementById('userDropdown').classList.remove('show'); }
+        function abrirModalDisciplina() { document.getElementById('modalDisciplina').classList.add('show'); }
+        function fecharModalDisciplina() { document.getElementById('modalDisciplina').classList.remove('show'); }
+
+        function configurarPicker(pickerId, inputId) {
+            const picker = document.getElementById(pickerId);
+            picker.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const valor = parseInt(btn.dataset.v);
+                picker.className = 'dificuldade-picker nivel-' + valor;
+                picker.querySelectorAll('button').forEach(b => {
+                    b.classList.toggle('on', parseInt(b.dataset.v) <= valor);
+                });
+                document.getElementById(inputId).value = valor;
+            });
+        }
+        configurarPicker('dificuldadePicker', 'dificuldadeInput');
+        configurarPicker('dificuldadePickerEditar', 'dificuldadeInputEditar');
+
+        function abrirEdicaoDisciplina(id, nomeAtual, dificuldadeAtual) {
+            document.getElementById('formEditarDisciplina').action = `/meus_estudos/disciplina/${id}/editar`;
+            document.getElementById('inputEditarDisciplinaNome').value = nomeAtual;
+
+            const picker = document.getElementById('dificuldadePickerEditar');
+            picker.className = 'dificuldade-picker nivel-' + dificuldadeAtual;
+            picker.querySelectorAll('button').forEach(b => {
+                b.classList.toggle('on', parseInt(b.dataset.v) <= dificuldadeAtual);
+            });
+            document.getElementById('dificuldadeInputEditar').value = dificuldadeAtual;
+
+            document.getElementById('modalEditarDisciplina').classList.add('show');
+        }
+        function fecharEdicaoDisciplina() { document.getElementById('modalEditarDisciplina').classList.remove('show'); }
+
+        document.querySelectorAll('.btn-editar-disciplina').forEach(btn => {
+            btn.addEventListener('click', () => abrirEdicaoDisciplina(btn.dataset.id, btn.dataset.nome, parseInt(btn.dataset.dificuldade)));
+        });
+
+        // ---- ARRASTAR PRA REORDENAR DISCIPLINAS ----
+        function ativarArrastar(gridId, urlReordenar) {
+            const grid = document.getElementById(gridId);
+            if (!grid) return;
+            let arrastando = null;
+
+            grid.querySelectorAll('[draggable="true"]').forEach(card => {
+                card.addEventListener('dragstart', () => {
+                    arrastando = card;
+                    card.classList.add('arrastando');
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('arrastando');
+                    salvarNovaOrdem(grid, urlReordenar);
+                });
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const depois = pegarElementoDepois(grid, e.clientY);
+                    if (!arrastando) return;
+                    if (depois == null) {
+                        grid.appendChild(arrastando);
+                    } else {
+                        grid.insertBefore(arrastando, depois);
+                    }
+                });
+            });
+        }
+
+        function pegarElementoDepois(grid, y) {
+            const cards = [...grid.querySelectorAll('[draggable="true"]:not(.arrastando)')];
+            return cards.reduce((maisProximo, card) => {
+                const box = card.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > maisProximo.offset) {
+                    return { offset, elemento: card };
+                }
+                return maisProximo;
+            }, { offset: Number.NEGATIVE_INFINITY }).elemento;
+        }
+
+        function salvarNovaOrdem(grid, urlReordenar) {
+            const ids = [...grid.querySelectorAll('[draggable="true"]')].map(c => parseInt(c.dataset.id));
+            fetch(urlReordenar, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            });
+        }
+
+        function fecharGuia(id) {
+            document.getElementById(id).classList.remove('show');
+            localStorage.setItem('focus_guia_fechado_' + id, '1');
+        }
+
+        function initModulo() {
+            const theme = localStorage.getItem('focus_theme') || 'default';
+            if(theme !== 'default') document.body.classList.add(theme + '-theme');
+            document.querySelectorAll('.guia-compacto').forEach(g => {
+                if (!localStorage.getItem('focus_guia_fechado_' + g.id)) g.classList.add('show');
+            });
+            ativarArrastar('gridDisciplinas', '{{ url_for("reordenar_disciplinas", modulo_id=modulo["id"]) }}');
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initModulo);
+        } else {
+            initModulo();
+        }
+
+        window.toggleDropdown = toggleDropdown;
+        window.abrirModalDisciplina = abrirModalDisciplina;
+        window.fecharModalDisciplina = fecharModalDisciplina;
+        window.fecharEdicaoDisciplina = fecharEdicaoDisciplina;
+        window.fecharGuia = fecharGuia;
+    })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+/* Estilos específicos do Completar Perfil.
+   O restante (cores por tema, .edit-card, .section-title, .avatars-grid,
+   .avatar-option, .avatar-img, .input-group, .btn-save, alto contraste e
+   tamanho de letra) vem de perfil.css, carregado junto nesta página para
+   não duplicar o que já existe em Editar Perfil. */
+
+.setup-step {
+    display: inline-block;
+    background: var(--input-bg);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    border: 2px solid var(--border);
+}
+
+.setup-hint {
+    font-size: 12px;
+    color: var(--text);
+    opacity: 0.6;
+    margin: -20px 0 30px;
+    text-align: center;
+}
+
+.username-preview {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 700;
+    margin-top: 8px;
+    min-height: 18px;
+}
